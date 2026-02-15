@@ -1,0 +1,287 @@
+---
+title: Security & compliance
+description: Security architecture, data handling, and privacy practices for CreditCardGuard.
+---
+
+## Overview
+
+CreditCardGuard is designed to reduce payment-card risk by never storing raw card data and by enforcing strong security and privacy controls across the stack.
+
+This page explains the security model, how sensitive data is handled, and what you must do in your own environment to stay compliant.
+
+<Callout kind="info">
+
+This document describes technical controls and recommended practices for using CreditCardGuard. It is not legal advice. Always consult your security and compliance teams before going to production.
+
+</Callout>
+
+## Threat model
+
+CreditCardGuard focuses on protecting cardholder data and related metadata from:
+
+- **Network attackers** intercepting traffic between your systems and CreditCardGuard.
+- **Application-level attackers** attempting card data exfiltration via API misuse, injection, or broken access control.
+- **Insider threats** accessing logs, databases, or admin panels beyond their role.
+- **Credential abuse** through leaked API keys, JWTs, or OAuth tokens.
+- **Infrastructure compromise** where an attacker gains partial access to application services or storage.
+
+At a high level, the design aims to:
+
+- Ensure raw primary account numbers (PAN) and CVV are **never persisted**.
+- Minimize exposure of card data in transit using **TLS-only** endpoints.
+- Constrain access using **RBAC with least privilege**.
+- Provide **auditability** for sensitive operations.
+
+## Data handling
+
+### Card data lifecycle
+
+CreditCardGuard treats card data as transient:
+
+1. Raw PAN and CVV are accepted over an HTTPS connection.
+2. Data is validated and immediately **tokenized**.
+3. Raw values are discarded from memory as soon as they are no longer needed.
+4. Downstream operations use tokens or masked data only.
+
+<Callout kind="danger">
+
+**PCI-sensitive data warning**
+
+- Do not store raw PAN or CVV in your own databases, logs, or analytics tools.
+- Do not send PAN or CVV to non-payment services (for example, error trackers, chat logs, observability dashboards).
+- Use the provided token or masked representation for all subsequent operations.
+
+</Callout>
+
+### Tokenization
+
+Tokenization replaces card data with non-sensitive identifiers:
+
+- **One-way mapping**: Tokens cannot be reversed into PAN or CVV.
+- **Scoped tokens**: Tokens can be scoped to a merchant, environment, or purpose.
+- **Limited lifetime**: Configure token TTLs based on your business needs and risk appetite.
+
+Tokens are the primary way your systems interact with CreditCardGuard APIs after the initial capture.
+
+### Masking
+
+When card numbers must be displayed (for example, customer support views):
+
+- Only the last 4 digits are shown, with the rest masked (for example, `**** **** **** 1234`).
+- CVV is never displayed, even in masked form.
+- Expiration month and year may be shown in full, as they are not considered sensitive authentication data, but you should avoid displaying them when not necessary.
+
+### Encryption in transit
+
+All network communication with CreditCardGuard must use:
+
+- **HTTPS with TLS** enforced; HTTP is not supported.
+- Strong cipher suites and modern TLS versions (aligned with current best practices).
+- Secure cookie and header settings if you embed CreditCardGuard capture flows in a browser context.
+
+If you terminate TLS in your own infrastructure before forwarding traffic, use secure internal links and avoid downgrading to plaintext.
+
+### Encryption at rest
+
+Sensitive artifacts that must be stored (such as tokens or limited card metadata) are protected with:
+
+- **Encryption at rest** using strong algorithms (for example, AES-256).
+- Strict access control on key material, following least-privilege principles.
+- Segregated storage for different environments (sandbox vs. production).
+
+Raw PAN and CVV are never stored at rest; only derived or tokenized data may be persisted.
+
+### Data retention
+
+To reduce risk and support privacy obligations:
+
+- Card tokens and metadata are kept **only as long as needed** for the purpose they were collected.
+- Logs and audit data are retained for a configurable period aligned with your internal policies and regulatory requirements.
+- You should define:
+  - Maximum retention for tokens (for example, recurring billing vs. one-time use).
+  - Log retention policies for card-related events.
+  - Backup retention aligned with your legal and compliance posture.
+
+## Authentication and authorization
+
+CreditCardGuard relies on standards-based authentication and role-based authorization.
+
+### Authentication (JWT / OAuth)
+
+Typical patterns include:
+
+- **OAuth 2.0** or similar flows to obtain access tokens for server-to-server calls.
+- **JWT-based** access tokens that:
+  - Are signed and time-bound.
+  - Contain minimal necessary claims (such as subject, role, and scopes).
+  - Are validated on every request.
+
+Recommended practices:
+
+- Use short-lived tokens with automatic rotation.
+- Store secrets (client IDs, client secrets, signing keys) in a secrets manager.
+- Do not embed long-lived access tokens in mobile or frontend applications.
+
+### Role-based access control (RBAC)
+
+RBAC enforces least privilege across typical roles:
+
+- **Admin**
+  - Manage merchant configuration, API keys, and RBAC assignments.
+  - View high-level analytics, not raw card data.
+  - Approve security-sensitive operations (for example, role changes).
+- **Merchant**
+  - Manage payment flows and tokens for their own merchant account.
+  - Read masked card data where necessary for customer support.
+  - Cannot change platform-wide security settings or access other merchants.
+- **Analyst**
+  - View aggregated, anonymized reporting and trends.
+  - No access to individual card tokens or identifiers.
+  - Restricted to read-only operations.
+
+Implement these principles in your integration:
+
+- Map your internal users to the above roles or similar permissions.
+- Use **scope-based access control** in tokens to limit what each client can do.
+- Ensure that any admin UI or API uses **strong authentication** (for example, SSO, MFA).
+
+### Least privilege in practice
+
+To apply least privilege:
+
+- Create separate credentials for:
+  - Backend payment processing.
+  - Reporting and analytics.
+  - Administrative tasks.
+- Ensure that:
+  - Services that only need analytics cannot access tokenization or detokenization endpoints.
+  - Customer support tools use masked views and are denied access to raw tokens when possible.
+  - Automation scripts use narrow, time-limited scopes.
+
+## Operational security
+
+### Secrets management
+
+Handle all credentials and secrets with care:
+
+- Store API keys, signing keys, and database credentials in a **central secrets manager**.
+- Rotate secrets regularly and after any suspected compromise.
+- Never hard-code secrets in source code, container images, or client-side applications.
+
+### Audit logs
+
+Audit logs help you detect and investigate suspicious activity:
+
+- Log security-significant events:
+  - Authentication successes and failures.
+  - Token creation, access, and deactivation.
+  - RBAC changes and admin actions.
+- Include:
+  - Actor identity (user or service).
+  - Timestamp.
+  - Action type and target resource.
+  - Outcome (success or failure).
+
+<Callout kind="tip">
+
+**Logging and redaction guidance**
+
+- Never log PAN, CVV, or full unmasked card numbers.
+- Redact or hash any potentially sensitive fields before logging.
+- Use stable but non-reversible identifiers in logs to correlate events (for example, token IDs or internal references).
+- Review your logging configuration after any change to request/response payloads.
+
+</Callout>
+
+### Rate limiting and abuse protection
+
+CreditCardGuard enforces rate limiting to:
+
+- Protect against credential stuffing and brute-force attacks.
+- Mitigate denial-of-service attempts.
+- Reduce the impact of misconfigured or runaway clients.
+
+In your integration:
+
+- Implement client-side retry logic with backoff for throttled requests.
+- Monitor for unusual spikes in tokenization or verification traffic.
+- Separate public-facing and internal service credentials to better isolate abuse.
+
+### Application security and OWASP alignment
+
+Design your integration to guard against common web application vulnerabilities, following OWASP guidance:
+
+- **Injection**: Use parameterized queries and avoid building SQL or command strings from untrusted input.
+- **Broken access control**: Enforce RBAC in your own services; never rely solely on client-side checks.
+- **Sensitive data exposure**: Treat any card-related identifiers as sensitive, even when tokenized.
+- **Security misconfiguration**: Harden default settings, remove unused endpoints, and keep dependencies up to date.
+- **Cross-site scripting (XSS)**: Carefully sanitize and escape any user-submitted data before rendering in the browser.
+
+## Privacy and GDPR
+
+CreditCardGuard is designed to support GDPR-compliant usage through data minimization, purpose limitation, and strong security controls. You are responsible for configuring and using the system in a way that matches your obligations as a controller or processor.
+
+### Data minimization
+
+Collect and store only the data you actually need:
+
+- Limit card-related data to tokens, masked digits, and minimal metadata.
+- Avoid capturing customer personal data in free-text fields that might also contain card numbers.
+- Configure your forms and APIs to strictly validate allowed fields and lengths.
+
+In practice:
+
+- Prefer separate fields for card data vs. general comments.
+- Run automated checks (for example, regex-based validation) to prevent card numbers from being stored as plain text in unrelated fields.
+
+### Purpose limitation
+
+Use card data only for the purpose for which it was collected:
+
+- Define clear internal policies for:
+  - Payment processing.
+  - Refunds and chargebacks.
+  - Fraud detection and dispute handling.
+- Do not repurpose card-related data for:
+  - Marketing or profiling.
+  - Unrelated analytics beyond what is necessary for fraud and operations.
+
+Align your documentation and user-facing notices with how you use tokens and card metadata.
+
+### Data subject rights and deletion requests
+
+Your integration should support GDPR rights such as access, rectification, and erasure:
+
+- Maintain mappings from your customer identifiers to:
+  - Related card tokens.
+  - Associated logs and metadata.
+- Implement a **data deletion workflow** to:
+  - Revoke or delete tokens associated with a data subject when no longer legally required.
+  - Remove or pseudonymize related metadata where feasible.
+  - Respect legal retention requirements (for example, accounting or fraud-prevention obligations) before deletion.
+
+Recommended practices:
+
+- Provide an internal API or process for your support and privacy teams to:
+  - Look up all tokens associated with a user.
+  - Request deletion or anonymization.
+- Ensure backups and archival systems have documented retention and deletion policies.
+
+## Compliance disclaimer
+
+CreditCardGuard is engineered with strong security and privacy controls, including:
+
+- End-to-end encryption in transit and at rest for sensitive artifacts.
+- GDPR-aligned data handling (data minimization, purpose limitation, deletion support).
+- RBAC, least privilege access, audit logging, and rate limiting.
+
+However:
+
+- CreditCardGuard is **not a PCI-DSS certified vault** and is not a drop-in replacement for a dedicated payment processor.
+- You **must not** use CreditCardGuard as the sole system of record for cardholder data.
+- You are responsible for:
+  - Ensuring that your full architecture and processes meet PCI-DSS and other regulatory requirements.
+  - Avoiding any storage of PAN or CVV outside of approved and certified payment systems.
+  - Conducting your own security assessments, penetration tests, and compliance reviews.
+
+Use CreditCardGuard as a protective layer to reduce exposure to raw card data, not as a replacement for required payment and compliance infrastructure.

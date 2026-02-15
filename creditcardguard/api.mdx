@@ -1,0 +1,301 @@
+---
+title: "CreditCardGuard API"
+description: "REST API overview for scoring credit card transactions, monitoring dashboards, alerts, bulk uploads, and model retraining in CreditCardGuard."
+---
+
+## Overview
+
+The CreditCardGuard API is a REST-style, JSON-based interface for fraud scoring and monitoring. You can use it to:
+
+- Score individual transactions in real time
+- Power dashboards and monitoring views
+- Retrieve alerts
+- Submit batch files for processing
+- Trigger model retraining for administrative workflows
+
+All endpoints use HTTPS and are designed to work with tokenized card data. The backend enforces rate limiting and does not store raw card numbers.
+
+<Callout kind="info">
+
+This page is an overview. For general authentication concepts (JWT, OAuth, API keys), see the [Authentication](/authentication) page.
+
+</Callout>
+
+## Authentication
+
+CreditCardGuard supports industry-standard authentication:
+
+- **JWT / OAuth access tokens**: Typically sent in the `Authorization` header as `Bearer YOUR_TOKEN`.
+- **API keys**: In some deployments, requests may use static keys (for example, a header such as `X-API-Key`). Use the scheme configured for your environment.
+
+All endpoints must be called over HTTPS.
+
+<Callout kind="tip">
+
+Confirm the exact header names and token formats with your deployment configuration or platform provider. This guide assumes a typical `Authorization: Bearer` pattern but does not mandate a specific header schema.
+
+</Callout>
+
+## Security and card data
+
+The platform is designed so that you never transmit sensitive primary account numbers (PANs) or CVV values directly.
+
+<Callout kind="danger">
+
+**Never send raw PAN or CVV values to the CreditCardGuard API.**  
+Always send tokens or surrogates created by your payment gateway, vault provider, or tokenization service.
+
+</Callout>
+
+Common patterns:
+
+- Use a **card token** provided by your payment processor instead of a full card number.
+- Use non-sensitive descriptors (for example, last 4 digits, BIN ranges) only when required and allowed by your policies.
+- Avoid including any personally identifiable information beyond what is strictly necessary for your use case.
+
+## Base URL and headers
+
+Typical setup (adjust for your environment):
+
+```bash
+BASE_URL="https://your-creditcardguard-host"
+AUTH_TOKEN="YOUR_JWT_OR_OAUTH_TOKEN"
+
+curl "$BASE_URL/api/transactions" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "transaction": "payload" }'
+```
+
+Common headers:
+
+- `Authorization`: bearer token or API key, depending on your setup.
+- `Content-Type: application/json` for JSON requests.
+- `Accept: application/json` for JSON responses.
+
+## Endpoint summary
+
+The following endpoints are available:
+
+| Method | Path                   | Description                             |
+| ------ | ---------------------- | --------------------------------------- |
+| POST   | `/api/transactions`   | Submit a single transaction for scoring |
+| GET    | `/api/dashboard`      | Fetch real-time metrics and charts      |
+| GET    | `/api/alerts`         | List user alerts                        |
+| POST   | `/api/bulk-upload`    | Process CSV files in bulk               |
+| POST   | `/api/models/retrain` | Trigger model update (admin only)       |
+
+Use the sections below for high-level behavior of each endpoint.
+
+## POST /api/transactions
+
+Submit a single transaction for risk scoring and decisioning.
+
+### Request
+
+You send a JSON payload describing the transaction. The exact schema depends on your integration, but it typically includes identifiers, amounts, timestamps, and tokenized card references.
+
+Example (shape only, fields are illustrative):
+
+```bash
+curl "$BASE_URL/api/transactions" \
+  -X POST \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transaction_id": "txn_123456",
+    "amount": 125.50,
+    "currency": "USD",
+    "card_token": "tok_abc123",
+    "merchant": {
+      "id": "m_9001",
+      "category": "ecommerce",
+      "country": "US"
+    },
+    "channel": "online",
+    "timestamp": "2024-01-01T12:34:56Z",
+    "customer": {
+      "id": "cust_789",
+      "ip_address": "203.0.113.42"
+    },
+    "metadata": {
+      "order_id": "order_555"
+    }
+  }'
+```
+
+Key expectations:
+
+- The body is JSON.
+- Card-related fields reference a **token**, not a full card number.
+- Include enough context (merchant, channel, location, device, etc.) for effective scoring.
+
+### Response
+
+The API returns a JSON object that includes a risk score, a decision, and high-level reasons for the decision.
+
+Example (shape only):
+
+```json
+{
+  "transaction_id": "txn_123456",
+  "risk_score": 0.87,
+  "decision": "review",
+  "top_reasons": [
+    "velocity_high_for_customer",
+    "unusual_device_fingerprint"
+  ],
+  "metadata": {
+    "model_version": "2024.01",
+    "evaluated_at": "2024-01-01T12:34:57Z"
+  }
+}
+```
+
+Typical fields:
+
+- `risk_score`: numeric risk estimate, often between 0 and 1 or 0 and 100.
+- `decision`: a string decision label (for example, `approve`, `decline`, `review`) defined by your configuration.
+- `top_reasons`: a short list of model- or rules-based rationales suitable for logging, review workflows, or agent tools.
+
+## GET /api/dashboard
+
+Fetch real-time metrics used to drive dashboards and monitoring views.
+
+Example:
+
+```bash
+curl "$BASE_URL/api/dashboard" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Accept: application/json"
+```
+
+Typical usage:
+
+- Populate fraud operations dashboards.
+- Monitor approval rates, alert volumes, or recent trends.
+
+The response is a JSON object with aggregated metrics and chart-ready series. The exact structure is deployment-specific but commonly includes counts, rates, and time-series data.
+
+## GET /api/alerts
+
+Retrieve alerts that have been generated by the system.
+
+Example:
+
+```bash
+curl "$BASE_URL/api/alerts" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Accept: application/json"
+```
+
+Typical behavior:
+
+- Returns a JSON array or paginated list of alerts.
+- Each alert usually includes identifiers, severity, timestamps, and short descriptions.
+- Integrate this endpoint into case management tools, notification systems, or operations dashboards.
+
+You may have optional query parameters available (such as time ranges, statuses, or pagination cursors) depending on your environment.
+
+## POST /api/bulk-upload
+
+Submit batch files (for example, CSV) for bulk processing, such as scoring historical transactions or backfilling risk assessments.
+
+### Request
+
+You typically send a CSV or similar file format, often as multipart form data. The exact field name, encoding, and column definitions depend on your deployment.
+
+Example (shape only):
+
+```bash
+curl "$BASE_URL/api/bulk-upload" \
+  -X POST \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -F "file=@transactions.csv;type=text/csv"
+```
+
+Expected file types:
+
+- Text-based CSV files are the standard input.
+- Column layout and required headers are determined by your integration contract.
+- Ensure all card-related columns contain **tokens or anonymized values**, not raw numbers.
+
+<Callout kind="info">
+
+If you need to upload large or compressed files, coordinate formats, size limits, and chunking strategies with your platform operator.
+
+</Callout>
+
+### Response
+
+The endpoint responds with a job descriptor so you can track progress asynchronously.
+
+Example (shape only):
+
+```json
+{
+  "job_id": "job_20240101_0001",
+  "status": "queued",
+  "submitted_at": "2024-01-01T13:00:00Z",
+  "metadata": {
+    "filename": "transactions.csv",
+    "approx_record_count": 100000
+  }
+}
+```
+
+Typical pattern:
+
+- `job_id`: unique identifier for the bulk processing job.
+- `status`: initial status (for example, `queued`, `accepted`).
+- You later query your monitoring tools or a separate job-status endpoint (if available) to fetch completion state and aggregate results.
+
+## POST /api/models/retrain (admin)
+
+Trigger a model update or retraining workflow. This endpoint is restricted to administrative or system-level clients.
+
+Example:
+
+```bash
+curl "$BASE_URL/api/models/retrain" \
+  -X POST \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "scheduled_update",
+    "notes": "Monthly retrain based on latest data window"
+  }'
+```
+
+Typical characteristics:
+
+- Requires elevated permissions and stricter access controls.
+- May start a long-running pipeline.
+- Response often includes a tracking identifier and initial status.
+
+## Error responses
+
+All endpoints use a consistent JSON error format so you can log and handle failures systematically.
+
+Standard shape:
+
+```json
+{
+  "code": "string_error_code",
+  "message": "Human-readable explanation of the error",
+  "request_id": "req_abc123xyz"
+}
+```
+
+Common elements:
+
+- `code`: short, machine-friendly error identifier, suitable for dashboards and alerting.
+- `message`: descriptive text that you can surface in logs or internal tooling.
+- `request_id`: unique identifier used by the platform to trace and debug requests; include this when contacting support or investigating issues.
+
+Examples of where you might see this format:
+
+- Invalid or missing authentication tokens.
+- Malformed JSON payloads.
+- Unsupported file formats on `/api/bulk-upload`.
+- Permission errors (for example, non-admin clients calling `/api/models/retrain`).

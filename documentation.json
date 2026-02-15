@@ -37,6 +37,47 @@
             ]
           },
           {
+            "group": "CreditCardGuard",
+            "icon": "credit-card",
+            "pages": [
+              {
+                "title": "Overview",
+                "path": "creditcardguard/overview",
+                "icon": "file-text"
+              },
+              {
+                "title": "Features",
+                "path": "creditcardguard/features",
+                "icon": "layers-2"
+              },
+              {
+                "title": "Architecture",
+                "path": "creditcardguard/architecture",
+                "icon": "chart-network"
+              },
+              {
+                "title": "ML engine",
+                "path": "creditcardguard/ml-engine",
+                "icon": "brain-circuit"
+              },
+              {
+                "title": "API",
+                "path": "creditcardguard/api",
+                "icon": "terminal"
+              },
+              {
+                "title": "Deployment",
+                "path": "creditcardguard/deployment",
+                "icon": "rocket"
+              },
+              {
+                "title": "Security & compliance",
+                "path": "creditcardguard/security-compliance",
+                "icon": "shield-check"
+              }
+            ]
+          },
+          {
             "group": "CiviQ",
             "icon": "landmark",
             "pages": [

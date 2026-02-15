@@ -1,0 +1,439 @@
+---
+title: "CreditCardGuard deployment"
+description: "Options and best practices for deploying CreditCardGuard locally and to production, including Docker Compose, environment variables, Kubernetes, CI/CD, observability, and scaling."
+---
+
+## Overview
+
+This page covers how to deploy CreditCardGuard in local and production environments. It focuses on:
+
+- Local deployment choices (plain processes vs Docker Compose)
+- Required environment variables for each service
+- Recommended containerization and optional Kubernetes usage
+- CI/CD with GitHub Actions
+- Observability with logs and Prometheus/Grafana
+- Scaling to handle thousands of transactions per day
+
+Use this as a blueprint and adapt details to your infrastructure provider.
+
+## Deployment topologies
+
+### Local deployment
+
+You can run CreditCardGuard locally in two main ways:
+
+- **Plain processes**: run each service directly on your machine
+- **Docker Compose (recommended)**: run all services in containers with a single command
+
+#### Plain processes
+
+Run each component as a separate process:
+
+- Frontend (for example, Next.js, React SPA)
+- API backend (for example, Node, Python, or similar)
+- ML service (fraud detection / scoring)
+- Databases and infrastructure:
+  - MongoDB (local container or managed instance like MongoDB Atlas)
+  - Redis
+  - RabbitMQ
+  - Object storage (for example, local filesystem or S3-compatible)
+
+This approach is useful for debugging but requires you to install and manage each dependency manually.
+
+#### Docker Compose (recommended)
+
+A `docker-compose.yml` file can define:
+
+- `frontend` service
+- `api` service
+- `ml-service`
+- `mongodb` (or connection to MongoDB Atlas)
+- `redis`
+- `rabbitmq`
+- Optional: `storage` proxy such as MinIO for S3-compatible storage
+- Optional: `prometheus`, `grafana` for observability
+
+Using Docker Compose gives you:
+
+- Reproducible local environments
+- Clear separation of services
+- A natural path to containerized production deployment
+
+## Recommended Docker Compose flow
+
+Use the following flow to stand up a standard CreditCardGuard environment. The exact `docker-compose.yml` file is not provided here; treat this as the recommended pattern when you create your own file.
+
+<Steps>
+
+<Step title="Prepare environment files" icon="settings">
+
+Create one `.env` file per service and one root `.env` that Docker Compose can load.
+
+At minimum, define:
+
+- Frontend variables (API URL, auth configuration)
+- API variables (MongoDB, Redis, RabbitMQ, storage)
+- ML service variables (model paths, API keys if using external models)
+- Shared secrets (JWT signing keys, encryption keys) referenced by both API and ML service
+
+Keep these files out of version control and managed securely (for example, `.gitignore` and a secret manager).
+
+</Step>
+
+<Step title="Define services in docker-compose.yml" icon="package">
+
+Create a `docker-compose.yml` that defines the core services:
+
+- `frontend`: depends on `api`
+- `api`: depends on `mongodb`, `redis`, `rabbitmq`, and optional `storage`
+- `ml-service`: depends on `api` or is called by `api`
+- `mongodb`: local container or connection to MongoDB Atlas via environment variables
+- `redis`: in-memory cache and rate-limiting store
+- `rabbitmq`: queue for asynchronous fraud analysis or transaction processing
+- `storage`: optional S3-compatible object storage (for example, MinIO) if you store artifacts or reports
+
+Ensure each service has `env_file` or `environment` entries pointing to the right variables.
+
+</Step>
+
+<Step title="Start the stack and verify health" icon="play-circle">
+
+From the directory that contains your `docker-compose.yml`:
+
+```bash
+docker compose up --build
+```
+
+Then verify:
+
+- Frontend is reachable on its configured port
+- API health endpoint responds (for example, `/health` or `/status`)
+- ML service endpoint responds for a simple test request
+- MongoDB, Redis, and RabbitMQ containers are healthy
+
+Use `docker compose logs -f api` and `docker compose ps` to debug issues.
+
+</Step>
+
+<Step title="Seed and test the system" icon="terminal">
+
+Seed any required data:
+
+- Create test merchants and users
+- Configure test cards or tokenized card references
+- Seed ML models or ensure they are downloaded and loaded on start
+
+Then run end-to-end tests:
+
+- Submit a handful of test transactions via the API
+- Confirm that:
+  - They reach the queue (RabbitMQ)
+  - Workers or ML service process them
+  - Risk scores or fraud decisions are recorded in MongoDB
+  - Caching in Redis works as expected (for example, repeated queries are faster)
+
+</Step>
+
+</Steps>
+
+<Callout kind="alert">
+
+Never store production secrets such as API keys, encryption keys, or database passwords in your `docker-compose.yml` file or commit them to your repository. Use environment variables, encrypted `.env` files, or a secret manager such as Vault, AWS Secrets Manager, or your CI/CD provider&apos;s secret storage.
+
+</Callout>
+
+## Environment variables
+
+CreditCardGuard typically uses environment variables grouped by service. The exact variable names depend on your implementation, but you should plan for these categories.
+
+### Frontend
+
+Used to configure how the UI talks to the backend and how it handles authentication.
+
+Common variables:
+
+- `FRONTEND_PORT`: port the frontend listens on locally
+- `NEXT_PUBLIC_API_BASE_URL` or `REACT_APP_API_BASE_URL`: base URL for the API
+- `NEXT_PUBLIC_ENVIRONMENT`: environment label such as `development`, `staging`, `production`
+- `NEXT_PUBLIC_SENTRY_DSN` or similar: error monitoring for the frontend
+
+### API service
+
+Used for core business logic, fraud evaluation orchestration, and communication with infrastructure.
+
+Common variables:
+
+- `PORT`: API listening port
+- `NODE_ENV` or equivalent: runtime mode `development`, `staging`, `production`
+- `MONGODB_URI`: connection string for MongoDB or MongoDB Atlas
+- `REDIS_URL`: connection string for Redis
+- `RABBITMQ_URL`: connection string for RabbitMQ
+- `JWT_SECRET` or `AUTH_SECRET`: token signing
+- `ENCRYPTION_KEY`: key for sensitive data at rest
+- `ML_SERVICE_URL`: URL of the ML scoring service
+- `STORAGE_BUCKET` and `STORAGE_ENDPOINT`: if using object storage
+- `LOG_LEVEL`: log verbosity (for example, `info`, `debug`, `warn`, `error`)
+
+### ML service
+
+Used to load models and tune inference behavior.
+
+Common variables:
+
+- `ML_PORT`: ML service port
+- `MODEL_PATH` or `MODELS_DIR`: directory containing fraud detection models
+- `MODEL_VARIANT`: which model to use by default (for example, `production`, `shadow`)
+- `BATCH_SIZE` and `MAX_CONCURRENCY`: inference throughput tuning
+- `API_KEY` or `PROVIDER_API_KEY`: if calling external ML providers
+- `LOG_LEVEL`: logging level for the ML service
+
+### Database (MongoDB / MongoDB Atlas)
+
+If running MongoDB in a container, you typically use:
+
+- `MONGO_INITDB_ROOT_USERNAME`
+- `MONGO_INITDB_ROOT_PASSWORD`
+- `MONGO_INITDB_DATABASE`
+
+If using MongoDB Atlas, you configure the connection string via `MONGODB_URI` in the API service and do not expose credentials as separate variables to application containers.
+
+### Redis
+
+Redis options are usually handled through the API service, but for a Redis container you may see:
+
+- `REDIS_PASSWORD` (if enabled)
+- `REDIS_PORT`
+
+The application should use a single `REDIS_URL` of the form `redis://user:password@host:port`.
+
+### RabbitMQ
+
+For a RabbitMQ container:
+
+- `RABBITMQ_DEFAULT_USER`
+- `RABBITMQ_DEFAULT_PASS`
+- `RABBITMQ_DEFAULT_VHOST`
+
+The API and worker services should consume a single `RABBITMQ_URL` with those credentials.
+
+### Object storage
+
+For S3-compatible storage (S3, MinIO, etc.):
+
+- `STORAGE_ENDPOINT`: URL of the S3 endpoint
+- `STORAGE_REGION`
+- `STORAGE_ACCESS_KEY_ID`
+- `STORAGE_SECRET_ACCESS_KEY`
+- `STORAGE_BUCKET`: default bucket name
+- Optional: `STORAGE_USE_SSL`, `STORAGE_PATH_STYLE`
+
+## Containerization and Kubernetes
+
+### Containerization strategy
+
+For production, treat each service as a container:
+
+- `frontend`: built as a static site or server-side rendered app
+- `api`: container with runtime and dependencies
+- `ml-service`: container with model artifacts and runtime
+- `worker` or `processor`: background worker for RabbitMQ queues
+- `prometheus` and `grafana`: observability containers (optional)
+- `redis`, `rabbitmq`: either self-managed containers or managed services from your cloud provider
+- `mongodb`: usually MongoDB Atlas or similar managed offering
+
+Use a consistent base image per language and ensure:
+
+- Health checks are defined (`HEALTHCHECK` in Dockerfile or Kubernetes readiness/liveness probes)
+- Environment variables are injected via your orchestrator (not hard-coded in the image)
+- Logging is written to stdout/stderr for aggregation by your platform
+
+### Optional Kubernetes deployment
+
+Kubernetes is not required but is a natural next step once you have working containers.
+
+Common pattern:
+
+- One `Deployment` per service (frontend, api, ml-service, workers)
+- `Service` objects exposing internal and external endpoints
+- `HorizontalPodAutoscaler` for `api`, `ml-service`, and workers
+- `ConfigMap` for non-sensitive configuration and `Secret` resources for credentials
+- `Ingress` or gateway to route traffic to the frontend and API
+
+When using Kubernetes:
+
+- Prefer managed MongoDB (MongoDB Atlas) instead of running MongoDB inside the cluster
+- Consider managed Redis and RabbitMQ services if available in your cloud provider
+- Use node pools and resource requests/limits to ensure the ML service has adequate CPU and memory
+
+## CI/CD with GitHub Actions
+
+GitHub Actions works well for building and deploying CreditCardGuard.
+
+Typical workflow:
+
+1. **Build and test**
+   - Trigger on push and pull requests
+   - Run unit tests and integration tests for:
+     - Frontend
+     - API
+     - ML service
+   - Lint and static analysis
+
+2. **Build images**
+   - Build Docker images for:
+     - `frontend`
+     - `api`
+     - `ml-service`
+     - Workers
+   - Tag images with `git` SHA and `latest`
+
+3. **Push to registry**
+   - Push images to a container registry such as GitHub Container Registry or your cloud provider
+
+4. **Deploy**
+   - For Docker Compose servers:
+     - SSH into target host and run `docker compose pull` and `docker compose up -d`
+   - For Kubernetes:
+     - Use `kubectl` or a GitOps tool (for example, Argo CD or Flux)
+     - Apply updated manifests or set new image tags
+
+5. **Post-deploy checks**
+   - Call API health endpoints
+   - Optionally run smoke tests
+
+Keep all secrets (registry credentials, database passwords, encryption keys) as encrypted GitHub Actions secrets and inject them into workflows as environment variables.
+
+## Observability and monitoring
+
+### Logs
+
+All services should output structured logs to stdout:
+
+- Frontend server logs (if SSR)
+- API logs:
+  - Requests and responses (do not log full card numbers or other sensitive data)
+  - Errors and exceptions
+  - Queue operations (publishing and consuming messages)
+- ML service logs:
+  - Inference requests and latency metrics
+  - Model loading status
+- Worker logs:
+  - Job start and completion
+  - Retry attempts and failures
+
+Forward these logs to:
+
+- Your platform&apos;s logging solution, or
+- A dedicated stack such as ELK or Loki
+
+Redact sensitive fields before logging.
+
+### Prometheus and Grafana
+
+For quantitative visibility, export Prometheus metrics from each service:
+
+Useful metrics include:
+
+- **API**
+  - Request rate and latency per endpoint
+  - Error rate by status code
+  - Queue publish latency
+
+- **ML service**
+  - Inference throughput
+  - Inference latency percentiles (P50, P95, P99)
+  - Model load time and number of loaded models
+
+- **Workers**
+  - Jobs processed per queue
+  - Processing latency
+  - Retry and dead-letter counts
+
+Run Prometheus and Grafana as:
+
+- Local containers in Docker Compose for development
+- Separate deployments in Kubernetes or managed observability services in production
+
+Create dashboards that highlight:
+
+- Transaction volume over time
+- Fraud decision rates (approved, rejected, flagged)
+- Latency of key endpoints
+- Queue depth and worker utilization
+
+## Scaling for thousands of transactions per day
+
+When you reach thousands of transactions per day (and beyond), focus on:
+
+- Horizontal scaling
+- Queue sizing
+- Caching
+
+### Horizontal workers and services
+
+Use horizontal scaling instead of relying on a single large instance.
+
+- **API**
+  - Run multiple API instances behind a load balancer
+  - Use a shared Redis and MongoDB so any node can handle any request
+  - Enable connection pooling to MongoDB
+
+- **ML service**
+  - Run multiple ML service instances and load balance across them
+  - Ensure models are loaded once on startup and reused across requests
+
+- **Workers**
+  - Scale worker replicas based on:
+    - Queue depth
+    - Job age
+    - CPU utilization
+
+In Kubernetes, configure `HorizontalPodAutoscaler` on:
+
+- `api` deployment (metrics: request rate, CPU)
+- `ml-service` deployment (metrics: inference requests, CPU)
+- Worker deployment (metrics: queue depth via custom metrics, CPU)
+
+### Queue sizing and backpressure
+
+RabbitMQ (or another queue system) is central to handling bursts of traffic.
+
+Guidelines:
+
+- Set queue length thresholds and alerts:
+  - If queue depth grows faster than workers can consume, scale workers up
+- Use dead-letter queues for failed messages and define retry policies
+- Keep messages small (for example, references or IDs instead of full payloads) and fetch data from MongoDB when processing
+- Use prefetch limits to avoid overloading a single worker
+
+As traffic grows, you can:
+
+- Partition queues by merchant, region, or risk tier
+- Run dedicated worker pools per queue
+
+### Caching
+
+Redis helps you reduce load on the API and MongoDB:
+
+- Cache:
+  - Frequently accessed configuration
+  - Aggregated metrics or reports that are expensive to compute
+  - Idempotency keys or recent transaction lookups
+- Use reasonable TTLs so cache invalidation is predictable
+- Avoid caching raw card data; cache tokens or non-sensitive aggregates instead
+
+When scaling:
+
+- Monitor Redis memory usage and cache hit rate
+- Consider Redis clustering or a managed Redis service for high availability
+
+## Summary
+
+To deploy CreditCardGuard reliably:
+
+- Use Docker Compose locally (recommended) and containerized services in production
+- Clearly define environment variables per service and keep secrets secure
+- Optionally use Kubernetes for orchestration and horizontal scaling
+- Implement CI/CD with GitHub Actions to build, test, and deploy containers
+- Instrument logs and metrics, and add Prometheus/Grafana for observability
+- Scale horizontally, tune queues, and leverage caching to handle thousands of transactions per day with consistent performance.
