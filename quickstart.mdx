@@ -1,58 +1,235 @@
 ---
 title: Quickstart
-description: Minimal steps to customize this sample starter kit.
+description: Spin up the CreditCardGuard dashboard, Node API, and Python ML risk service locally.
 ---
+
 ## Overview
 
-<Callout kind="alert" collapsed="false">
-  This site ships with placeholder content. Use this quickstart to replace it with your real product docs.
+CreditCardGuard is a MERN dashboard with a separate Python ML inference service for real‑time credit card fraud risk scoring. Use this quickstart to get a local end‑to‑end demo running: web UI → Node API → ML service → risk score.
+
+<Callout kind="info">
+
+This guide assumes you are working from a cloned CreditCardGuard repository. Adjust paths and commands to match your local setup.
+
 </Callout>
 
-## 1. Update a page
+## Prerequisites
+
+Make sure you have the following installed:
+
+- Node.js (LTS recommended)
+- Python 3 (with `venv` available)
+- MongoDB (local instance or managed cluster)
+- Git (to clone and manage the repo)
+- Optional: Docker and Docker Compose if you prefer containers
+
+You should also have a basic understanding of:
+
+- REST APIs (for the Node backend)
+- JSON payloads (for ML inference requests)
+- Environment variables for secrets and configuration
+
+## Suggested repository structure
+
+A common layout for CreditCardGuard is:
+
+```bash
+creditcardguard/
+  web/               # React (MERN) dashboard
+  api/               # Node.js / Express API layer
+  ml-service/        # Python ML inference service (REST or gRPC wrapper)
+  docs/              # Documentation (optional, if stored in-repo)
+  scripts/           # Helper scripts (optional)
+```
+
+You can adapt folder names, but keep:
+
+- The **web** app separate from the **Node API**.
+- The **Python ML service** isolated with its own dependencies and virtual environment.
+
+## 1. Configure environment variables
+
+At minimum, you will need environment files for:
+
+- Web dashboard (frontend)
+- Node API
+- ML service
+
+Common variable sets:
+
+```bash
+# web/.env (example)
+VITE_API_BASE_URL=http://localhost:4000
+
+# api/.env (example)
+MONGO_URI=mongodb://localhost:27017/creditcardguard
+PORT=4000
+ML_SERVICE_URL=http://localhost:5000
+
+# ml-service/.env (example)
+MODEL_PATH=./models/fraud_model.pkl
+SERVICE_PORT=5000
+LOG_LEVEL=info
+```
+
+<Callout kind="tip">
+
+Use `.env.local` variants for secrets in development and never commit real card data, API keys, or customer identifiers to source control.
+
+</Callout>
+
+## 2. Run CreditCardGuard locally
 
 <Steps>
-  <Step title="Edit introduction" icon="edit" title-type="p">
-    Replace the sample introduction with a concise overview of your product and the key actions you want new users to take first.
+  <Step title="Install dependencies" icon="download" titleType="p">
+
+    From the repo root, install dependencies for each service.
+
+    ```bash
+    # Web dashboard
+    cd web
+    npm install
+
+    # Node API
+    cd ../api
+    npm install
+
+    # Python ML service
+    cd ../ml-service
+    python -m venv .venv
+    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+    pip install -r requirements.txt
+    ```
+
   </Step>
 
-  <Step title="Preview your change" icon="monitor" title-type="p">
-    Use your dashboard board editor to confirm the updated introduction looks and reads as expected.
+  <Step title="Start MongoDB" icon="database" titleType="p">
+
+    Ensure MongoDB is running locally or that you have a reachable connection string.
+
+    ```bash
+    # Example: local MongoDB (adjust for your OS/setup)
+    mongod --dbpath /data/db
+    ```
+
+    If you use a managed service (for example, MongoDB Atlas), update `MONGO_URI` accordingly in `api/.env`.
+
+  </Step>
+
+  <Step title="Run the ML inference service" icon="terminal" titleType="p">
+
+    In `ml-service`, start the Python server that exposes the fraud model.
+
+    ```bash
+    cd ml-service
+    source .venv/bin/activate      # Ensure the venv is active
+    python app.py                  # Or your preferred entrypoint
+    ```
+
+    By default, target `http://localhost:5000` from the Node API (or whatever you set in `ML_SERVICE_URL`).
+
+  </Step>
+
+  <Step title="Run the Node API" icon="code" titleType="p">
+
+    In `api`, start the backend server.
+
+    ```bash
+    cd api
+    npm run dev    # or: node server.js
+    ```
+
+    Confirm it listens on the port defined by `PORT` (for example, `http://localhost:4000`).
+
+  </Step>
+
+  <Step title="Run the web dashboard" icon="monitor" titleType="p">
+
+    In `web`, start the React app.
+
+    ```bash
+    cd web
+    npm run dev    # or: npm start
+    ```
+
+    Open the printed URL in your browser (for example, `http://localhost:5173` or `http://localhost:3000`) and make sure the dashboard can reach the API.
+
+  </Step>
+
+  <Step title="Verify with a sample request" icon="check-circle" titleType="p">
+
+    Use `curl` or a REST client to confirm the API can talk to the ML service.
+
+    ```bash
+    # Example: POST a sample transaction to the Node API
+    curl -X POST http://localhost:4000/api/transactions/evaluate \
+      -H "Content-Type: application/json" \
+      -d '{
+        "transactionId": "test-123",
+        "amount": 42.50,
+        "currency": "USD",
+        "merchantCategory": "ecommerce",
+        "cardCountry": "US",
+        "channel": "online"
+      }'
+    ```
+
+    You should receive a JSON response with a risk score and classification (for example, `low`, `medium`, `high` risk).
+
   </Step>
 </Steps>
 
-## 2. Add a new page
+## 3. Run an end-to-end fraud risk demo
 
-<Steps>
-  <Step title="Add a page" icon="file-text" title-type="p">
-    Create a new `page` by clicking on the + button from the left navigation bar of dashboard. If you are using git, create the .mdx file and add to navigation bar using documentation.json
-  </Step>
-</Steps>
+Once all services are running:
 
-## Example onboarding flow (replace with yours)
+1. Open the **CreditCardGuard dashboard** in your browser.
+2. Navigate to the **New transaction** or **Test transaction** screen (depending on your UI).
+3. Enter a synthetic card transaction (test data only, see security note below).
+4. Submit the transaction and wait for the response.
+5. Observe:
+   - The **risk score** returned from the Python ML service.
+   - The **classification** (for example, flagged vs. approved).
+   - Any **alert** or log entry created in the dashboard (for example, a row in a transaction table, a notification badge, or a risk alert feed).
 
-1. Sign up for an account and verify your email.
+To debug issues:
 
-2. Create your first workspace, project, or environment.
+- Check browser dev tools for failed API calls.
+- Inspect Node API logs to confirm it is calling the ML service.
+- Inspect ML service logs to see incoming features and inference times.
 
-3. Add one integration or data source to connect your existing tools.
+## Security and data handling
 
-4. Complete a guided action (for example, run your first job or publish your first resource).
+<Callout kind="alert">
 
-5. Invite a teammate and assign a basic role or permission.
+Never use real cardholder data in development. Always use synthetic or tokenized test data.
 
-## 3. Connect API Reference (optional)
+</Callout>
 
-If you have an API, replace `openapi.yaml` with your real OpenAPI file. If you do not need an API reference, remove that tab either from dashboard or  `documentation.json`.
+Recommended practices for CreditCardGuard:
+
+- **Tokenization only:** Store and process **tokens**, not raw PANs or CVVs. The system should treat any card number field as a tokenized identifier provided by an external PCI‑compliant vault.
+- **No PAN/CVV persistence:** Do not log or store full PAN, CVV, or track data in:
+  - Application logs
+  - Databases
+  - Analytics events
+- **Masking in UI:** Mask all card‑like identifiers in the dashboard (for example, show only last 4 digits or a hash).
+- **Environment separation:** Use separate API keys, database instances, and ML models per environment (dev, staging, prod).
+
+For production rollout, integrate CreditCardGuard with your existing tokenization provider and ensure the Node API only ever receives non‑sensitive tokens and derived features.
 
 ## Next steps
 
-<Columns cols="2">
-  <Card title="Core Concepts" href="/concepts" icon="layers" horizontal="false">
-    Keep the mental model simple and easy to scan.
+<Columns cols={2}>
+  <Card title="Introduction" href="/introduction" icon="home" horizontal="false">
+
+    Learn how CreditCardGuard fits into your existing payment and fraud prevention stack.
+
   </Card>
 
   <Card title="Authentication" href="/authentication" icon="lock" horizontal="false">
-    Add your real auth flows and security notes.
+
+    Configure API keys and auth flows before exposing the risk API beyond local development.
+
   </Card>
 </Columns>
-

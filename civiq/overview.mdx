@@ -1,0 +1,92 @@
+---
+title: CiviQ overview
+description: High-level overview of the CiviQ civic issue reporting and management system.
+---
+
+## Overview
+
+CiviQ is a web application that enables citizens to report civic issues, see how those issues progress, and receive updates as they are resolved. It provides dedicated dashboards for citizens, administrators, and municipal employees.
+
+At its core, CiviQ connects three things:
+
+- People who experience issues in their community
+- Staff who are responsible for addressing them
+- A shared view of what has been reported and done
+
+<Callout kind="info">
+
+This page is an overview for general readers and stakeholders. It focuses on concepts and flows, not implementation details.
+
+</Callout>
+
+## How CiviQ works
+
+CiviQ manages the lifecycle of a civic issue from initial report to resolution.
+
+1. **Issue is reported**
+
+   A user submits a new issue through the CiviQ web interface. They describe the problem, can attach an image, and specify its location using geolocation data.
+
+2. **Issue is viewed and assigned**
+
+   An admin sees new submissions in the admin dashboard and assigns each issue to one or more employees.
+
+3. **Work is carried out and completed**
+
+   Employees use their dashboard to see assigned issues, perform the necessary work, and mark issues as completed when finished.
+
+4. **User tracks status and receives updates**
+
+   As the issue status changes, CiviQ surfaces those updates in the user&apos;s view so they can see progress and the final outcome.
+
+5. **User rates and reviews history**
+
+   After an issue is marked resolved, the reporting user can rate the resolution and view the history of their submitted issues.
+
+## Roles at a glance
+
+CiviQ is organized around three primary roles, each with a dedicated dashboard.
+
+### User (citizen)
+
+- Submits new civic issues with description, image, and location.
+- Monitors the status of their own reports.
+- Receives updates as issues move through the lifecycle.
+- Rates resolved issues and reviews past submissions.
+
+### Admin
+
+- Views newly submitted issues.
+- Assigns issues to employees.
+
+### Employee
+
+- Views issues assigned to them.
+- Marks issues as completed when work is done.
+
+## Status lifecycle
+
+Each reported issue moves through a simple lifecycle.
+
+1. **Pending**
+
+   - The issue has been reported by a user.
+   - It is waiting for admin assignment.
+
+2. **In-progress**
+
+   - The issue has been assigned to an employee.
+   - Work on the issue is underway.
+
+3. **Resolved**
+
+   - The work for the issue has been completed.
+   - The issue is marked as resolved but remains visible in the system.
+
+## Related CiviQ documentation
+
+Use these pages to explore CiviQ in more detail:
+
+- [CiviQ features](/civiq/features) &mdash; key capabilities for each role and dashboard.
+- [CiviQ project documents](/civiq/project-documents) &mdash; requirements, design notes, and planning materials.
+- [CiviQ tech stack](/civiq/tech-stack) &mdash; technologies and architecture used to implement CiviQ.

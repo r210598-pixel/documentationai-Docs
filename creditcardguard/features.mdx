@@ -1,0 +1,314 @@
+---
+title: "CreditCardGuard features"
+description: "Overview of CreditCardGuard features, including real-time fraud detection, card validation, transaction graph analysis, dashboards, alerts, batch reporting, roles, and scalability."
+---
+
+## Overview
+
+CreditCardGuard provides a set of detection, monitoring, and reporting capabilities for card-present and card-not-present transactions. This page describes the major feature areas and how they work at a high level so you can decide which pieces to integrate.
+
+<Columns cols={3}>
+
+<Card title="Real-time detection" href="#real-time-fraud-detection" icon="zap">
+
+Use machine learning models and rules to evaluate each transaction in milliseconds.
+
+</Card>
+
+<Card title="Validation & graph analysis" href="#card-validation-engine" icon="shield">
+
+Validate cards and analyze entity relationships to surface coordinated fraud.
+
+</Card>
+
+<Card title="Operations & scale" href="#interactive-dashboard" icon="bar-chart">
+
+Monitor risk, configure alerts, manage roles, and scale to thousands of transactions per day.
+
+</Card>
+
+</Columns>
+
+## Real-time fraud detection
+
+Real-time fraud detection evaluates each transaction as it arrives and produces a risk score or decision (for example, approve, review, decline). CreditCardGuard combines statistical models, sequence models, and rule-based features.
+
+### Core detection models
+
+The system can combine multiple model families, each specializing in a different pattern:
+
+| Model type        | Typical use case                                      | Example signals used                           |
+| ----------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| Isolation Forest  | Outlier detection across many transaction features   | Amount deviation, merchant rarity, device risk |
+| LSTM / GRU        | Sequential behavior over time for a given entity     | Hourly velocity, day-of-week patterns          |
+| Rules / heuristics| Fast checks for well-known risky patterns            | BIN velocity spikes, repeated CVV failures     |
+
+A production setup commonly routes each transaction through:
+
+1. A feature pipeline that computes velocity (per card, per device, per merchant), geo features, and historical risk.
+2. One or more anomaly detection models (for example, Isolation Forest).
+3. A sequence model (for example, LSTM or GRU) focused on recent activity.
+4. A policy layer that converts scores into decisions and explanations.
+
+### Velocity and behavioral features
+
+Velocity features capture how quickly money is moving and how behavior changes:
+
+- **Card velocity:** number and total value of transactions per card over short windows (for example, last 5 minutes, 1 hour, 24 hours).
+- **Merchant velocity:** spikes in attempted payments at a single merchant, which may indicate testing.
+- **Device and IP velocity:** multiple cards used from the same device or IP in a short time window.
+
+Example velocity patterns that can raise risk:
+
+- Ten small authorizations (for example, $1–$5) on the same card in under 2 minutes.
+- The same device attempting charges on tens of different cards within 10 minutes.
+
+### Geo jump and location inconsistencies
+
+Location-based checks combine IP geolocation, merchant country, and historical card usage:
+
+- **Geo jump:** the card is used from one country and then from a distant country within a short period that is not physically plausible.
+- **Unseen region:** a card historically used only in one region suddenly appears in a high-risk region.
+- **IP and BIN mismatch:** an IP geolocation that does not match typical usage for the card’s issuing region.
+
+These features are fed into anomaly models or rules such as:
+
+- Flag if the card appears in two distant countries within 10 minutes.
+- Increase risk if the first-ever transaction appears in a high-risk region at an unusual hour.
+
+<Callout kind="tip">
+
+When you design your integration, avoid treating risk scores as binary decisions. Prefer a tiered approach (for example, auto-approve low risk, step-up authentication for medium risk, manual review for high risk) so you can tune false positive and false negative tradeoffs over time.
+
+</Callout>
+
+## Card validation engine
+
+The card validation engine provides lightweight, deterministic checks on card details before you run more expensive fraud models or send authorizations to processors.
+
+### Built-in validation checks
+
+The engine focuses on checks that can be done locally and quickly:
+
+- **Luhn checksum:** validates the overall structure of the primary account number.
+- **BIN / IIN checks:** verifies that the leading digits correspond to a known issuer and card brand, and optionally enforces issuer-specific constraints such as length.
+- **Length and format rules:** ensures the card number, CVV, and postal code match expected formats for the issuer or region.
+- **Expiry validation:** checks that the card is not expired and that the expiry date is plausible (for example, not too far in the past or future).
+
+These checks are typically run:
+
+1. As early as possible in your payment flow (for example, on form submit).
+2. Before you incur any upstream processing cost.
+
+### Using external validation APIs
+
+CreditCardGuard does not replace your payment gateway or issuer validation services. Instead, it is designed to sit alongside them:
+
+- Use the local validation engine to catch clearly invalid input and reduce downstream noise.
+- Use your PSP or card network APIs for authoritative responses such as card status, 3-D Secure results, or credit limit checks.
+- When available, feed external API results (for example, reason codes) back into your risk models as additional signals.
+
+## Transaction graph analysis
+
+Fraud rarely happens in isolation. Transaction graph analysis looks at relationships between cards, devices, merchants, IPs, and accounts to uncover coordinated activity that might be invisible on a single-transaction basis.
+
+### Entity graph
+
+CreditCardGuard can represent your ecosystem as a graph of entities connected by interactions, for example:
+
+- **Nodes:** cards, cardholders, devices, IP addresses, merchants, email addresses.
+- **Edges:** transactions, logins, chargeback events, shared attributes.
+
+Typical questions you can answer:
+
+- Which devices are associated with the highest number of disputed transactions?
+- Are there clusters of merchants that share many high-risk cards or IPs?
+- Does a new card quickly connect into a high-risk cluster?
+
+### Graph metrics and scoring
+
+You can apply standard graph analytics to this network:
+
+- **Degree and centrality:** highly connected nodes (for example, a device used by many unrelated cards) may be suspicious.
+- **Community detection:** groups of entities that interact much more with each other than with the rest of the graph can indicate organized activity.
+- **Risk propagation:** for example, increase the risk of nodes that are one or two hops away from confirmed fraud.
+
+These metrics can be combined into graph-based risk scores and then fed into your real-time decision engine.
+
+### Graph neural networks (GNNs)
+
+For teams with more advanced requirements, you can experiment with GNN architectures such as GraphSAGE:
+
+- Use node features (for example, average transaction amount, dispute rate) and edge features (for example, transaction timestamps, channel) as model inputs.
+- Aggregate information from neighbors to compute embeddings for each node or transaction.
+- Use these embeddings in downstream classifiers or anomaly detectors.
+
+You should treat GNNs as an optional layer rather than a requirement. In many deployments, simpler graph metrics and rules already produce strong lift compared to single-transaction models.
+
+## Interactive dashboard
+
+The CreditCardGuard dashboard is designed to give fraud teams and operations staff a high-level view of risk, plus the ability to drill into specific entities. It is typically built with a React-based frontend and can integrate real-time data streams.
+
+### Visualizations and exploration
+
+Common visualization patterns include:
+
+- Time-series charts of transaction volume, fraud rate, and chargebacks.
+- Heatmaps of risk scores by geography, merchant segment, or channel.
+- Distribution plots of key features (for example, transaction amount, velocity).
+
+You can also expose:
+
+- Filters for time ranges, merchant groups, or countries.
+- Saved views for analysts to quickly revisit important segments.
+
+### Live activity feed
+
+For real-time monitoring, you can use technologies like Socket.io to stream recent events to the dashboard, such as:
+
+- Incoming transactions with current risk scores.
+- Triggered alerts and rule hits.
+- New chargeback or dispute events.
+
+This allows analysts to spot unusual bursts of activity and respond quickly, especially during peak times or special campaigns.
+
+## Alerts and notifications
+
+Alerts help you respond to risk in time, without requiring analysts to constantly watch dashboards.
+
+### Channels: email and SMS
+
+You can integrate alerts with typical communication channels:
+
+- **Email:** detailed alerts for investigation queues, daily summaries, or escalations.
+- **SMS (for example, via Twilio):** high-priority alerts where immediate human attention is required.
+
+Design your integration so that:
+
+- Alerts include enough context to act (for example, entity identifiers, summary of risk drivers).
+- Recipients and routing rules (for example, on-call rotation, merchant-specific contacts) are configurable.
+
+### Severity levels and thresholds
+
+Alerts work best when they are structured and can be tuned over time. A common pattern is to define:
+
+- **Severity levels:** for example, informational, warning, critical.
+- **Conditions:** combinations of risk score thresholds, rule triggers, and volumes (for example, burst of high-risk transactions from a single IP).
+- **Rate limits:** to avoid alert fatigue during incidents.
+
+Examples:
+
+- Trigger a warning when the share of high-risk transactions for a merchant doubles versus its baseline.
+- Trigger a critical alert when a single device attempts dozens of different cards in a few minutes.
+
+## Batch processing and reporting
+
+Not all fraud workflows are real time. CreditCardGuard also supports offline and near-real-time use cases.
+
+### Batch ingestion
+
+You can submit historical or delayed data in bulk for analysis and backfills. Typical patterns include:
+
+- **File-based uploads:** CSV or JSON files containing transactions, chargebacks, or user events.
+- **Scheduled jobs:** regular exports from upstream systems that are fed into CreditCardGuard in batches.
+
+Common scenarios:
+
+- Retrospective analysis to evaluate new models before deployment.
+- Backfilling risk scores for older data so you can train or re-train models.
+- Large merchant imports where the integration is not yet real-time.
+
+### Reporting and exports
+
+Reporting features focus on flexible exports so you can integrate with your own BI stack or share results with stakeholders:
+
+- **Aggregated reports:** summary statistics by merchant, region, card brand, or channel.
+- **Operational reports:** queues of cases, alerts triggered, and resolution outcomes.
+- **PDF exports:** shareable snapshots for compliance reviews, audits, or internal reporting.
+
+Many deployments also expose machine-readable output (for example, CSV or JSON downloads) so that you can connect to external analytics tools or data warehouses.
+
+## Roles and permissions
+
+Roles and permissions ensure that users see only what they need and that sensitive operations are controlled. A common setup includes three primary roles.
+
+### Role overview
+
+| Role      | Typical users           | Capabilities (examples)                                  |
+| --------- | ----------------------- | -------------------------------------------------------- |
+| Admin     | Security / platform team| Configure models, roles, permissions, data retention     |
+| Merchant  | Merchant operators      | View their own metrics, alerts, and cases                |
+| Analyst   | Fraud / risk analysts   | Investigate cases, adjust thresholds, manage queues      |
+
+### Admin
+
+Admins usually:
+
+- Manage tenants, merchants, and environments (for example, test vs production).
+- Configure global policies such as model choices, thresholds, and alert routing.
+- Control user lifecycle and access, including role assignments and SSO integration.
+
+### Merchant
+
+Merchant users focus on risk for their own traffic:
+
+- View dashboards filtered to their merchant accounts.
+- Review alerts or suspicious cases involving their transactions.
+- Download reports relevant to their business unit.
+
+### Analyst
+
+Analysts are responsible for investigation and tuning:
+
+- Work case queues with supporting context (entities, graph neighbors, history).
+- Propose changes to thresholds or rules based on investigation outcomes.
+- Collaborate with admins to adjust models or deploy new strategies.
+
+<Callout kind="info">
+
+If you handle production cardholder data, combine application-level roles with strong operational controls such as least-privilege access, regular access reviews, and audit logging of sensitive actions. Application roles are one layer in a broader access control strategy.
+
+</Callout>
+
+## Scalability and performance
+
+CreditCardGuard is designed to handle thousands of transactions per day with consistent decision latency. At a high level, scalability relies on asynchronous processing and caching.
+
+### Queues and asynchronous workloads
+
+A queue-based architecture (for example, using RabbitMQ) helps decouple ingestion from downstream processing:
+
+- **Ingestion layer:** receives transactions and performs lightweight, synchronous checks needed for immediate responses.
+- **Queue:** buffers events for additional processing (for example, more expensive models, graph updates) without blocking the caller.
+- **Workers:** consume from the queue and update risk scores, alerts, and aggregates.
+
+This design:
+
+- Smooths out traffic spikes.
+- Allows you to scale workers horizontally as volume grows.
+- Reduces the risk of dropped events during transient incidents.
+
+### Caching and response times
+
+Caching (for example, via Redis) improves overall responsiveness and reduces load on data stores and models:
+
+- Cache frequently accessed reference data, such as BIN/IIN metadata.
+- Cache recent entity summaries (for example, last N transactions, recent velocity metrics) used in decisioning.
+- Cache configuration snapshots (for example, rule sets, thresholds) so that evaluation is fast and consistent.
+
+When you design your deployment:
+
+- Define clear cache invalidation policies for configuration and reference data.
+- Monitor cache hit rates and latency alongside core application metrics.
+- Ensure that sensitive data stored in caches is encrypted at rest and in transit, and that access is restricted via proper network and access controls.
+
+## Security and compliance considerations
+
+Across all features, CreditCardGuard emphasizes security and regulatory alignment:
+
+- **Encryption:** protect sensitive fields in transit and at rest.
+- **Data minimization:** store only the data you need for fraud detection and reporting.
+- **Regulatory alignment:** design data retention and access controls to support frameworks such as GDPR where applicable.
+- **RBAC:** enforce role-based access control so that card data and models are limited to appropriate users and services.
+
+These practices apply whether you use CreditCardGuard as a standalone service or integrate it into a broader payment and risk architecture.

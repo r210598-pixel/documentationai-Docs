@@ -1,78 +1,162 @@
 ---
-title: Set Up Your Documentation
-description: 'A minimal, editable starting point for your own documentation site.'
+title: Introduction to CreditCardGuard
+description: Overview of the CreditCardGuard credit card validation and fraud detection system, including roles, core capabilities, and documentation map for project reviewers.
 ---
-## Start here (5–10 minutes)
 
-1. Edit this page so it describes your product and audience.
+## What is CreditCardGuard?
 
-2. Customize your onboarding flow in the [Quickstart](/quickstart) page.
+CreditCardGuard is a credit card validation and fraud detection system combining rule-based checks, machine learning models, and a web dashboard for monitoring and investigation.
 
-3. Delete or rewrite any sections and pages you do not plan to use.
+It validates incoming card transactions, scores their fraud risk in real time, and routes high-risk activity to analysts with clear alerts and case context. The system is designed as a final-year BTech project but follows patterns that real banks and payment processors use in production.
 
-4. Invite a teammate to review the structure and concepts starting from [Core Concepts](/concepts).
+<Callout kind="info">
 
-<Callout kind="alert" collapsed="false">
-  This site ships with placeholder content. Edit the text, links, and examples so they match your product before sharing it with others.
+Use this page to understand what CreditCardGuard does, who it is for, its main capabilities, and where to find deeper technical documentation about the architecture, ML engine, APIs, and deployment.
+
 </Callout>
 
-## What you get
+## Who is CreditCardGuard for?
 
-<Columns cols="3">
-  <Card title="Docs structure" href="/quickstart" icon="book-open" horizontal="false">
-    A clear navigation layout with starter pages you can rename or replace.
+CreditCardGuard is designed around three primary user groups, each with distinct responsibilities and dashboard views.
+
+<Columns cols={3}>
+  <Card title="Bank operations team" href="#bank-operations-dashboard" icon="shield" horizontal="false">
+    For issuing banks or payment processors that need to monitor and control card transaction risk at scale.
   </Card>
 
-  <Card title="Components" href="#try-a-few-components" icon="layout-grid" horizontal="false" target="_self">
-    Prebuilt blocks like Callouts, Steps, Tabs, and Cards to keep pages clean.
+  <Card title="Merchants / PSPs" href="#merchant-dashboard" icon="terminal" horizontal="false">
+    For merchants or payment service providers that want to reduce chargebacks and detect suspicious purchase patterns.
   </Card>
 
-  <Card title="API reference hook" href="/authentication" icon="code" horizontal="false">
-    A placeholder `openapi.yaml` you can swap with your real API spec.
+  <Card title="Fraud analysts" href="#fraud-analyst-dashboard" icon="bar-chart" horizontal="false">
+    For analysts who investigate alerts, review model decisions, and tune rules or thresholds.
   </Card>
 </Columns>
 
-## Make your first edit
+### Bank operations dashboard
+
+The bank operations view focuses on portfolio-level risk and operational control.
+
+- Monitor aggregated fraud risk across all transactions in near real time.
+- Configure global thresholds for blocking, challenging, or allowing transactions.
+- View high-risk cards, devices, and IP ranges.
+- Export activity summaries for compliance and reporting.
+
+### Merchant dashboard
+
+The merchant or payment service provider (PSP) view focuses on transaction quality and chargeback reduction.
+
+- See recent transactions and their validation or fraud score outcomes.
+- Identify risky customers, devices, or locations for a specific merchant account.
+- Track the impact of rules or ML thresholds on approval and decline rates.
+- Receive alerts for abnormal spikes in fraud scores or declines.
+
+### Fraud analyst dashboard
+
+The fraud analyst view is optimized for investigation and model understanding.
+
+- Inspect detailed transaction timelines and risk scores.
+- Drill into graph-based relationships between cards, devices, IPs, and merchants.
+- Review explanations for model decisions and rule hits.
+- Mark transactions as fraudulent or legitimate to generate labels for retraining.
+
+## Key capabilities
+
+CreditCardGuard combines multiple capabilities to detect and manage fraud efficiently.
+
+### Real-time validation and scoring
+
+- Validate basic card details using checksum logic and format constraints.
+- Enforce configurable business rules (such as velocity limits and country restrictions).
+- Compute real-time fraud scores using a trained machine learning model.
+- Classify transactions into risk bands (for example, allow, challenge, block) based on thresholds.
+
+### Graph-based relationship analysis
+
+- Build simple link graphs between cards, devices, IP addresses, and merchants.
+- Surface suspicious clusters, such as many cards used from one device or IP.
+- Highlight shared attributes between confirmed fraud cases to support investigations.
+
+### Alerting and case management
+
+- Generate alerts for transactions above configurable risk thresholds.
+- Group related high-risk events into cases for analyst review.
+- Track alert lifecycle from created to under review to resolved.
+- Capture analyst feedback that can be used as labels for model improvement.
+
+### Data safety and privacy model
+
+CreditCardGuard is designed as a learning project but still applies basic data-safety practices:
+
+- Use tokenization for primary account numbers (PAN) so that dashboards and logs only see tokens, not raw card numbers.
+- Never store full PAN or CVV values in the application database.
+- Retain only the minimum metadata needed for analytics (such as hashed identifiers and aggregated statistics).
+
+<Callout kind="tip">
+
+Keep the data model and storage layer free of raw cardholder data. Use synthetic or anonymized datasets during development and testing to avoid handling real payment information.
+
+</Callout>
+
+## CreditCardGuard documentation map
+
+This introduction is the starting point for exploring the rest of the CreditCardGuard documentation. The following pages will be added or expanded to cover each part of the system in detail.
+
+<Columns cols={3}>
+  <Card title="Overview" href="/concepts" icon="book-open" horizontal="false">
+    High-level problem statement, scope, and non-goals for CreditCardGuard, including assumptions and constraints for the project.
+  </Card>
+
+  <Card title="Features" href="/civiq/features" icon="zap" horizontal="false">
+    Detailed breakdown of validation, scoring, graph analysis, alerting, dashboards, and role-based access as implemented in the project.
+  </Card>
+
+  <Card title="Architecture" href="/civiq/overview" icon="database" horizontal="false">
+    System architecture, components, and data flow from incoming transaction to alert resolution, including diagrams and sequence flows.
+  </Card>
+</Columns>
+
+<Columns cols={3}>
+  <Card title="ML engine" href="/civiq/tech-stack" icon="code" horizontal="false">
+    Machine learning pipeline: feature engineering, model selection, training workflow, evaluation metrics, and model deployment strategy.
+  </Card>
+
+  <Card title="API reference" href="/authentication" icon="terminal" horizontal="false">
+    HTTP APIs for submitting transactions, retrieving scores, listing alerts, and integrating external systems with CreditCardGuard.
+  </Card>
+
+  <Card title="Deployment & security" href="/help-center/guides/setup-project" icon="lock" horizontal="false">
+    Deployment options for the web dashboard and backend services, environment configuration, and security best practices for credentials and data.
+  </Card>
+</Columns>
+
+<Callout kind="info">
+
+Paths above reuse existing documentation pages where possible and will be updated as dedicated CreditCardGuard pages are added for features, architecture, ML, API, deployment, and security.
+
+</Callout>
+
+## Next steps
 
 <Steps>
-  <Step title="Rewrite this page" icon="edit" title-type="p">
-    Update the title, description, and sections in `introduction` so they reflect your product and documentation goals.
+  <Step title="Review the problem and scope" icon="book-open" title-type="p">
+
+  - Clarify the fraud scenarios you want CreditCardGuard to detect and the assumptions of your dataset.
+  - Align project scope and success criteria with your BTech evaluation requirements and reviewer expectations.
+
   </Step>
 
-  <Step title="Customize Quickstart" icon="zap" title-type="p">
-    Replace the steps in `quickstart` with your real onboarding flow so new readers know exactly how to get started.
+  <Step title="Explore architecture and ML design" icon="database" title-type="p">
+
+  - Sketch the end-to-end flow from transaction ingestion to alert resolution.
+  - Decide on initial model features, training data format, and how you will evaluate performance.
+
   </Step>
 
-  <Step title="Remove or repurpose samples" icon="trash" title-type="p">
-    Delete unused sample sections and pages, or rewrite them with your own content to keep navigation focused.
+  <Step title="Plan integration and deployment" icon="rocket" title-type="p">
+
+  - Define how external systems will send transactions to the API and consume risk scores.
+  - Choose a deployment strategy for the web dashboard and backend services that is realistic for your project timeline.
+
   </Step>
 </Steps>
-
-## Try a few components
-
-You can browse the component gallery in the [Components](/components) page for ready-to-use examples of Cards, Callouts, Steps, Tabs, and more.
-
-## Continue to the rest of the sample
-
-<Columns cols="2">
-  <Card title="Quickstart" href="/quickstart" icon="zap" horizontal="false">
-    See the minimal setup flow.
-  </Card>
-
-  <Card title="Core Concepts" href="/concepts" icon="layers" horizontal="false">
-    Learn how pages, navigation, and components fit together.
-  </Card>
-
-  <Card title="Components" href="/components" icon="code" horizontal="false">
-    A small gallery of built-in components.
-  </Card>
-
-  <Card title="Authentication" href="/authentication" icon="lock" horizontal="false">
-    Example layout for an auth guide.
-  </Card>
-
-  <Card title="Help Center" href="/help-center" icon="help-circle" horizontal="false">
-    Starter FAQ, guides, and troubleshooting templates.
-  </Card>
-</Columns>
-

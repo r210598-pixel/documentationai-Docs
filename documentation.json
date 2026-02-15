@@ -37,6 +37,32 @@
             ]
           },
           {
+            "group": "CiviQ",
+            "icon": "landmark",
+            "pages": [
+              {
+                "title": "Overview",
+                "path": "civiq/overview",
+                "icon": "landmark"
+              },
+              {
+                "title": "Features",
+                "path": "civiq/features",
+                "icon": "layers-2"
+              },
+              {
+                "title": "Project documents",
+                "path": "civiq/project-documents",
+                "icon": "file-stack"
+              },
+              {
+                "title": "Tech stack",
+                "path": "civiq/tech-stack",
+                "icon": "blocks"
+              }
+            ]
+          },
+          {
             "group": "Components",
             "icon": "layers",
             "pages": [

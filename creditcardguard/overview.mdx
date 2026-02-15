@@ -1,0 +1,194 @@
+---
+title: "CreditCardGuard overview"
+description: "Conceptual overview of the CreditCardGuard fraud detection and card validation platform for banks, merchants, and analysts."
+---
+
+## What is CreditCardGuard?
+
+CreditCardGuard is an end-to-end credit card fraud detection and validation platform. It combines real-time machine learning scoring, anomaly detection, and graph-based analysis of transaction patterns with a MERN-based dashboard and a Python machine learning backend.
+
+The system ingests card transaction data, validates and tokenizes sensitive fields, scores each transaction using multiple models (including Isolation Forest and recurrent networks such as LSTM and GRU), and surfaces high-risk activity through alerts, dashboards, and reports. It supports batch uploads (CSV or JSON), role-based access control, and integrates with email and SMS (for example, via Twilio) for notifications.
+
+<Callout kind="alert">
+
+CreditCardGuard is a **training and evaluation project**. It must never be connected to production payment systems or used with live customer card data.
+
+</Callout>
+
+## Who CreditCardGuard is for
+
+CreditCardGuard is designed for technically proficient users who need to explore or evaluate fraud detection workflows:
+
+- **Banks and card issuers**  
+  Prototype fraud strategies, test new features, and simulate transaction risk scoring.
+
+- **Merchants and payment gateways**  
+  Experiment with rule and model combinations, understand fraud trade-offs, and design review workflows.
+
+- **Fraud analysts and data scientists**  
+  Explore anomaly detection, graph-based features, and model evaluation metrics such as F1 and ROC-AUC.
+
+- **Students and researchers**  
+  Study an integrated stack that spans ingestion, machine learning, security controls, and dashboard visualization.
+
+## Goals and non-goals
+
+### Project goals
+
+CreditCardGuard focuses on:
+
+- **Accurate fraud detection**  
+  Combine anomaly detection, sequence models, and graph analysis to flag suspicious transactions.
+
+- **Card validation workflow**  
+  Demonstrate validation of card-related fields and metadata (for example, PAN format checks, BIN/IIN patterns) before scoring.
+
+- **End-to-end observability**  
+  Provide dashboards for transaction streams, alerts, and model performance metrics.
+
+- **Security-aware processing**  
+  Apply tokenization, encryption, and role-based access control while handling sensitive fields.
+
+- **Experimentation and learning**  
+  Offer a realistic environment for trying different features, thresholds, and model combinations.
+
+### Non-goals
+
+The project is **not** intended to:
+
+- Act as a certified PCI-DSS compliant production system.
+- Replace commercial fraud detection services or vendor platforms.
+- Provide guaranteed performance or availability in high-load, regulated environments.
+- Offer a full dispute management or chargeback lifecycle tool.
+
+<Callout kind="info">
+
+Treat CreditCardGuard as a **reference implementation and sandbox**, not as an out-of-the-box solution for live payment traffic.
+
+</Callout>
+
+## High-level workflow
+
+At a high level, CreditCardGuard follows a consistent flow from data ingestion to analyst review.
+
+### 1. Ingest
+
+Transactions can be ingested in multiple ways:
+
+- **Streaming or API-like feeds** into the backend service.
+- **Batch uploads** of CSV or JSON files through the dashboard.
+- **Synthetic or anonymized datasets** for experimentation and benchmarking.
+
+During ingestion, basic structural validation ensures required fields are present and conform to expected formats.
+
+### 2. Preprocess and secure
+
+Before scoring, the backend:
+
+- **Validates fields** such as PAN structure, expiration dates, and BIN/IIN patterns.
+- **Normalizes data** (for example, amounts, currencies, timestamps, and geolocation attributes).
+- **Tokenizes sensitive values** so that raw card numbers are never stored or displayed.
+- **Encrypts** appropriate fields at rest and in transit.
+- **Applies role-based access** to control who can view particular data classes in the dashboard.
+
+### 3. Score and analyze
+
+The core fraud detection logic combines several model families:
+
+- **Anomaly detection models**  
+  Isolation Forest and related approaches highlight outliers in spending patterns or behavior.
+
+- **Sequence models (LSTM/GRU)**  
+  Recurrent networks capture temporal and behavioral patterns across transaction sequences.
+
+- **Graph-based analysis (for example, GraphSAGE, graph neural networks)**  
+  Relationships among cards, merchants, devices, and IP addresses are modeled as graphs to detect collusive or network-based fraud.
+
+Each transaction receives a **risk score** and optional **explanatory features** (for example, velocity indicators or graph-derived signals).
+
+### 4. Alert and notify
+
+Based on configurable thresholds and rules:
+
+- **High-risk transactions** trigger alerts in the dashboard.
+- **Notifications** can be sent via email or SMS using integrations such as Twilio.
+- **Batch scoring jobs** can produce summary reports highlighting top-risk entities (cards, merchants, devices).
+
+Alert rules can incorporate both raw scores and derived features such as transaction velocity, unusual locations, and graph anomalies.
+
+### 5. Review and report
+
+Analysts and reviewers use the MERN dashboard to:
+
+- **Review alert queues** and drill into specific transactions or entities.
+- **Inspect timelines** of activity for a card, merchant, or device.
+- **Monitor model metrics** (F1, precision/recall, ROC-AUC) and recalibration needs.
+- **Export reports** summarizing detected anomalies, trends, and model performance.
+
+## Success metrics
+
+You can evaluate a CreditCardGuard deployment using both **system-level** and **model-level** metrics.
+
+### System-level metrics
+
+- **Latency**  
+  - Target: end-to-end scoring latency below **50 ms** for online transactions (from ingestion to risk score).  
+  - Batch jobs may tolerate higher latency in exchange for throughput.
+
+- **Throughput**  
+  - Ability to process **thousands of transactions per day** for typical lab workloads.  
+  - For stress tests, you may push higher volumes to evaluate scaling.
+
+- **Availability and reliability**  
+  - Stable operation of the backend and dashboard under expected load.  
+  - Graceful handling of malformed inputs and batch upload errors.
+
+### Model-level metrics
+
+- **F1 score**  
+  Balance precision and recall to avoid both false positives (blocking good users) and false negatives (missed fraud).
+
+- **ROC-AUC**  
+  Assess overall discriminative power across thresholds.
+
+- **Precision and recall at operating threshold**  
+  Evaluate performance at your chosen alert threshold, not just aggregate metrics.
+
+- **Alert volume and analyst workload**  
+  Ensure the number of alerts is compatible with human review capacity.
+
+## Glossary
+
+Use this glossary as a quick reference while reading the rest of the documentation.
+
+### Tokenization
+
+Replacing a sensitive value (such as a card number) with a **non-sensitive surrogate token**. The token can be used internally for joins, analytics, and graph modeling, while the original value is stored separately or not retained. Tokenization reduces exposure risk if a database or log is compromised.
+
+### PAN (Primary Account Number)
+
+The full **card number** typically embossed or printed on a payment card. It encodes the issuer identification number, account number, and check digit. PANs are highly sensitive and must be protected with strict controls, including tokenization and encryption.
+
+### BIN / IIN (Bank Identification Number / Issuer Identification Number)
+
+The first **6 to 8 digits** of the PAN that identify the card network and issuing institution. BIN/IIN information is used in validation and fraud features, such as checking whether the card is used in consistent geographies or merchant categories.
+
+### Velocity
+
+A measure of **how frequently** an event occurs within a time window, often used as a fraud feature. Examples:
+
+- Number of transactions from a card in the last 10 minutes.
+- Number of distinct devices used by a card in the last 24 hours.
+- Number of failed attempts or declines in a short period.
+
+Unusual velocity patterns often indicate automated or fraudulent behavior.
+
+### Anomaly detection
+
+A set of techniques for identifying **unusual patterns** that deviate from expected behavior. In CreditCardGuard, anomaly detection models (such as Isolation Forest) flag transactions, accounts, or entities that are statistically rare or inconsistent with learned profiles.
+
+<Callout kind="danger">
+
+Even in test environments, always prefer **synthetic, masked, or fully anonymized data**. Do not paste real card numbers, CVVs, or personally identifiable information into dashboards, logs, or configuration files.
+
+</Callout>
