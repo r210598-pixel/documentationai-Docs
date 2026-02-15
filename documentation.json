@@ -42,7 +42,8 @@
             "pages": [
               {
                 "title": "practice-1",
-                "path": "practice-1"
+                "path": "practice-1",
+                "icon": "air-vent"
               },
               {
                 "title": "practice",
