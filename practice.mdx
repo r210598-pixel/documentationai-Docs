@@ -1,0 +1,22 @@
+---
+title: 'Practice '
+description: This is about the practice of the components present in this website
+---
+<Request default-tab="1" show-lines="true" tabs={[]}>
+  ```javascript
+  const response = await fetch('/api/docs', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer TOKEN' },
+    body: JSON.stringify({ title: 'Getting Started' })
+  });
+  ```
+
+  ```python
+  import requests
+  response = requests.post('/api/docs',
+    headers={'Authorization': 'Bearer TOKEN'},
+    json={'title': 'Getting Started'}
+  )
+  ```
+</Request>
+

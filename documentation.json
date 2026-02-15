@@ -41,6 +41,10 @@
             "icon": "credit-card",
             "pages": [
               {
+                "title": "practice",
+                "path": "practice"
+              },
+              {
                 "title": "Overview",
                 "path": "creditcardguard/overview",
                 "icon": "file-text"
