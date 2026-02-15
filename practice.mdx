@@ -2,7 +2,37 @@
 title: 'Practice '
 description: This is about the practice of the components present in this website
 ---
-<Request default-tab="1" show-lines="true" tabs={[]}>
+
+<Steps>
+  <Step title="Create project directory" icon="folder">
+    Set up your project structure and initialize package.json.
+  </Step>
+
+  <Step title="Install dependencies" icon="package">
+    Add DocumentationAI and required peer dependencies.
+  </Step>
+
+  <Step title="Configure settings" icon="settings">
+    Create your documentation.json configuration file.
+  </Step>
+</Steps>
+
+
+<Columns cols="3">
+  <Card title="Get started" href="/getting-started/introduction" icon="book-open" horizontal="false">
+    Learn the core concepts and how Documentation.AI is structured.
+  </Card>
+
+  <Card title="Write docs" href="/write-and-publish/code-editor" icon="code" horizontal="false">
+    Author and maintain documentation using MDX in your codebase.
+  </Card>
+
+  <Card title="Add media" href="/components/images" icon="image" horizontal="false">
+    Use images and screenshots to clarify long or complex flows.
+  </Card>
+</Columns>
+
+<Request show-lines="true" tabs={[]}>
   ```javascript
   const response = await fetch('/api/docs', {
     method: 'POST',

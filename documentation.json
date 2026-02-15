@@ -41,6 +41,10 @@
             "icon": "credit-card",
             "pages": [
               {
+                "title": "practice-1",
+                "path": "practice-1"
+              },
+              {
                 "title": "practice",
                 "path": "practice"
               },

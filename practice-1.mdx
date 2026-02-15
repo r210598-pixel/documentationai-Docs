@@ -1,0 +1,71 @@
+# CreditCardGuard - ML Fraud Detection
+
+Credit card fraud detection system using machine learning and MERN stack for real-time transaction analysis.
+
+## Project Overview
+
+The **"CreditCardGuard"** platform processes tokenized credit card details to detect fraud, validate cards, and generate risk scores using ML algorithms trained on synthetic/historical datasets. Users (banks, merchants) upload transaction logs or connect APIs, view interactive dashboards, and receive instant alerts on suspicious activities.
+
+**MERN web app + Python ML backend** - ideal for BTech final-year projects (4-6 months).
+
+## Core Features
+
+### 🔍 Real-Time Fraud Detection
+ML models (Isolation Forest, LSTM) flag anomalies like unusual spending velocity or geolocation jumps.
+
+### 🏦 Card Validation Engine
+BIN/IIN ranges, CVV/Luhn algorithm, expiry validation via APIs.
+
+### 📊 Transaction Graph Analysis
+Control flow graphs + alpha-beta pruning optimization for high-risk paths.
+
+### 📈 Interactive Dashboard
+React UI with real-time charts, fraud heatmaps, Twilio alerts.
+
+## Technical Architecture
+
+| Layer | Components | Key Tech |
+|-------|------------|----------|
+| **Frontend** | Responsive UI, live updates | React, Redux, Socket.io, Chart.js |
+| **Backend** | API server, auth | Node.js/Express, JWT, RabbitMQ |
+| **ML Engine** | Model training/inference | Python (Scikit-learn, TensorFlow), NetworkX |
+| **Database** | Transactions, models | MongoDB, Redis, MinIO |
+| **DevOps** | Containerization, monitoring | Docker, Kubernetes, GitHub Actions |
+
+**Data flow:** Form/API → Preprocessing → ML scoring → Dashboard/alert.
+
+## ML Model Details
+
+### Feature Engineering (50+ features)
+- Transaction amount z-score
+- Time-of-day entropy  
+- Merchant category velocity
+- IP geolocation velocity
+- PageRank of fraud networks
+
+### Primary Models
+
+<Tabs>
+  <Tab title="Supervised Learning">
+    **XGBoost/Random Forest** for high-precision classification on labeled data.
+  </Tab>
+  <Tab title="Unsupervised Learning">
+    **Autoencoders** + **GraphSAGE** for anomaly detection and relational patterns.
+  </Tab>
+  <Tab title="Sequential Analysis">
+    **LSTM/GRU** captures time-series patterns like card testing attacks.
+  </Tab>
+</Tabs>
+
+### Sample Implementation
+
+```python
+import joblib
+import numpy as np
+
+model = joblib.load('fraud_model.pkl')
+features = [[amt, vel, geo_dist]]  # [amount, velocity, geo_distance]
+risk_score = model.predict_proba(features)
+
+if risk_score > 0.7:
+    trigger_alert(transaction_id, risk_score)
