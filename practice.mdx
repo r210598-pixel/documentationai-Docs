@@ -2,9 +2,7 @@
 
 Credit card fraud detection system using machine l earning and MERN stack for real-time transaction analysis
 
-export const handleLogin=() => alert("Hello");
-
-<Button onClick={handleLogin}>Hello Javeed </Button>
+Hello Javeed&#x20;
 
 # CreditCardGuard - ML Fraud Detection
 
@@ -54,7 +52,7 @@ The system divides into frontend, backend, ML services, and database layers for 
 | **Database**  | Transactions, user data, model artifacts      | MongoDB (time-series), Redis (caching), MinIO (file storage)      |
 | **DevOps**    | Containerization, CI/CD, monitoring           | Docker, Kubernetes (optional), GitHub Actions, Prometheus/Grafana |
 
-**Data flow:** Web form/API → Preprocessing (normalize amount/location) → ML scoring → Dashboard update/alert.
+**Data flow:** Web form/API → Preprocessing (normalize amount/location) → ML scoring → Dashboard  update/alert.
 
 ## ML Model Details
 
@@ -64,11 +62,15 @@ Focus on hybrid models for high accuracy (aim for 95+ percent F1-score on Kaggle
 
 Extract 50+ features including:
 
-* Transaction amount z-score
-* Time-of-day entropy
-* Merchant category velocity
-* IP geolocation velocity
-* Graph-based metrics (e.g., PageRank of connected fraud rings)
+- Transaction amount z-score
+
+- Time-of-day entropy
+
+- Merchant category velocity
+
+- IP geolocation velocity
+
+- Graph-based metrics (e.g., PageRank of connected fraud rings)
 
 ### Primary Models
 
@@ -163,21 +165,23 @@ socket.on('fraudAlert', (alert) => {
 
 ### Security Implementation
 
-<Callout kind="alert">
+<Callout kind="alert" collapsed="false">
   Never store raw card numbers. Hash sensitive data, enforce HTTPS, and implement rate-limiting with express-rate-limit.
 </Callout>
 
 ### Deployment Options
 
-* **Local Development:** Docker-compose for all services
-* **Production:** Vercel/Netlify (frontend), Heroku/Railway (backend), MongoDB Atlas (database)
+- **Local Development:** Docker-compose for all services
+
+- **Production:** Vercel/Netlify (frontend), Heroku/Railway (backend), MongoDB Atlas (database)
 
 ## Dataset & Training Resources
 
 ### Public Datasets
 
-* **Kaggle IEEE-CIS Fraud Detection:** 300k+ transaction samples with labels
-* **PaySim:** Synthetic mobile money transactions dataset
+- **Kaggle IEEE-CIS Fraud Detection:** 300k+ transaction samples with labels
+
+- **PaySim:** Synthetic mobile money transactions dataset
 
 ### Synthetic Data Generation
 
@@ -186,8 +190,11 @@ Use Faker.js (Node.js) or Python Faker for mock data; augment with SMOTE for cla
 ### Preprocessing Steps
 
 1. **Load Data:** Import CSV → Handle missing values (impute median for numerical, mode for categorical)
+
 2. **Encode Features:** One-hot encoding for categoricals, embeddings for high-cardinality features
+
 3. **Scale Values:** Apply StandardScaler to numerical features
+
 4. **Split Dataset:** 80/20 train/test split; use cross-validation for robust evaluation
 
 ```python
@@ -221,44 +228,52 @@ Add PWA support for mobile responsiveness and offline capabilities.
 
 ## Challenges & Solutions
 
-<Expandable title="Imbalanced Data">
+<Expandable title="Imbalanced Data" default-open="false">
   **Problem:** Fraud transactions are typically less than 1 percent of dataset.
 
   **Solutions:**
 
-  * Oversample minority class using SMOTE
-  * Use class weights in model training
-  * Focus on precision-recall metrics instead of accuracy
+  - Oversample minority class using SMOTE
+
+  - Use class weights in model training
+
+  - Focus on precision-recall metrics instead of accuracy
 </Expandable>
 
-<Expandable title="Latency Requirements">
+<Expandable title="Latency Requirements" default-open="false">
   **Problem:** Real-time scoring must complete in less than 100ms.
 
   **Solutions:**
 
-  * Implement Redis caching for frequent queries
-  * Use model quantization to reduce inference time
-  * Deploy models on edge servers closer to users
+  - Implement Redis caching for frequent queries
+
+  - Use model quantization to reduce inference time
+
+  - Deploy models on edge servers closer to users
 </Expandable>
 
-<Expandable title="Scalability Concerns">
+<Expandable title="Scalability Concerns" default-open="false">
   **Problem:** System must handle thousands of concurrent transactions.
 
   **Solutions:**
 
-  * Implement microservices architecture
-  * Use Kubernetes horizontal pod autoscaling
-  * Implement message queues (RabbitMQ) for async processing
+  - Implement microservices architecture
+
+  - Use Kubernetes horizontal pod autoscaling
+
+  - Implement message queues (RabbitMQ) for async processing
 </Expandable>
 
-<Expandable title="Ethical Considerations">
+<Expandable title="Ethical Considerations" default-open="false">
   **Problem:** Privacy and bias in fraud detection.
 
   **Solutions:**
 
-  * Anonymize all personal data
-  * Conduct bias audits across demographics
-  * Implement explainable AI (SHAP values) for transparency
+  - Anonymize all personal data
+
+  - Conduct bias audits across demographics
+
+  - Implement explainable AI (SHAP values) for transparency
 </Expandable>
 
 ## Documentation Blueprint
@@ -267,33 +282,49 @@ Comprehensive documentation is crucial for project evaluation and portfolio pres
 
 ### Required Documents
 
-* **README.md:** High-level overview, demo GIF, quickstart (`git clone && npm i && docker-compose up`)
-* **Requirements Specs:** 20+ user stories (e.g., "As a merchant, I want a risk heatmap so I can block fraud early")
-* **Architecture Docs:** Mermaid diagrams for data/ML flows; ERD via dbdiagram.io
-* **API Reference:** Swagger/OpenAPI YAML with request/response examples
-* **ML Notebook:** Jupyter notebook with experiments, confusion matrices, feature importance
-* **Deployment Guide:** Environment variables, scaling tips, infrastructure setup
-* **Test Plan:** Unit tests (Jest), integration tests (Supertest), E2E tests (Cypress); target greater than 80 percent coverage
-* **User Manual:** Dashboard screenshots, API playground, common workflows
+- **README.md:** High-level overview, demo GIF, quickstart (`git clone && npm i && docker-compose up`)
+
+- **Requirements Specs:** 20+ user stories (e.g., "As a merchant, I want a risk heatmap so I can block fraud early")
+
+- **Architecture Docs:** Mermaid diagrams for data/ML flows; ERD via dbdiagram.io
+
+- **API Reference:** Swagger/OpenAPI YAML with request/response examples
+
+- **ML Notebook:** Jupyter notebook with experiments, confusion matrices, feature importance
+
+- **Deployment Guide:** Environment variables, scaling tips, infrastructure setup
+
+- **Test Plan:** Unit tests (Jest), integration tests (Supertest), E2E tests (Cypress); target greater than 80 percent coverage
+
+- **User Manual:** Dashboard screenshots, API playground, common workflows
 
 ## Project Statistics
 
 This enterprise-grade system showcases advanced skills in AI/ML-web fusion, perfect for resumes targeting fintech roles at companies like Razorpay or Paytm.
 
-* **Total Lines of Code:** ~5,000
-* **Development Time:** 4-6 months
-* **Target Accuracy:** 95+ percent F1-score
-* **Transaction Capacity:** Thousands daily
-* **Tech Stack:** MERN + Python ML
+- **Total Lines of Code:** \~5,000
+
+- **Development Time:** 4-6 months
+
+- **Target Accuracy:** 95+ percent F1-score
+
+- **Transaction Capacity:** Thousands daily
+
+- **Tech Stack:** MERN + Python ML
 
 ### Demo & Extensions
 
-* Prototype on localhost with Docker
-* Create demo video for YouTube/portfolio
-* Extend with blockchain for immutable transaction ledgers
-* Add mobile app with React Native
-* Implement A/B testing for model performance
+- Prototype on localhost with Docker
 
-<Callout kind="success">
+- Create demo video for YouTube/portfolio
+
+- Extend with blockchain for immutable transaction ledgers
+
+- Add mobile app with React Native
+
+- Implement A/B testing for model performance
+
+<Callout kind="success" collapsed="false">
   Ready to start building? Clone the boilerplate, set up your environment, and begin with the ML model training pipeline.
 </Callout>
+
