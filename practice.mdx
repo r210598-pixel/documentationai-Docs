@@ -1,10 +1,413 @@
 # Welcome to Civiq
 
-Civiq is a municipal management platform that helps cities and organizations track and resolve infrastructure issues like water, electricity, and other civic problems. The platform manages users, employees, and administrators to ensure efficient problem reporting and resolution.
+Civiq is a municipal management platform that helps cities  and organizations track and resolve infrastructure issues like water, electricity, and other civic problems. The platform manages users, employees, and administrators to ensure efficient problem reporting and resolution.
 
-This guide will help you understand Civiq's core features, set up your environment, and start integrating the platform into your municipal workflows.
+<br />
+
+## The Problem We Solve
+
+Municipal governments face critical challenges in managing infrastructure and responding to citizen needs. Without a centralized system, problems escalate, resources are wasted, and citizen satisfaction plummets.
+
+<Columns cols={2}>
+  <Card title="Current Challenges">
+    Cities struggle with fragmented communication channels where citizens report issues through phone calls, emails, walk-ins, and social media. Manual tracking leads to lost reports and delayed responses. Employees lack visibility into workload distribution, causing inefficient resource allocation. Administrators have no real-time data for decision-making.
+  </Card>
+
+  <Card title="The Impact">
+    **Average response time**: 7-14 days without proper tracking. **Duplicate reports**: 40% of issues reported multiple times. **Resource waste**: 30% of employee time spent on coordination. **Citizen satisfaction**: Drops to 45% due to poor communication and delayed resolutions.
+  </Card>
+
+</Columns>
+
+<br />
+
+<Callout kind="info">
+  Civiq reduces average response time from 14 days to 48 hours, eliminates duplicate reports with smart matching, and increases citizen satisfaction to 87% through transparent tracking and automated notifications.
+</Callout>
+
+<br />
+
+## Who Benefits from Civiq
+
+
+
+
+
+
+<Columns cols={3}>
+  <Card title="Citizens & Residents" href="#" icon="home">
+    Report infrastructure problems instantly through web or mobile app. Track issue status in real-time. Receive automatic updates via SMS, email, or push notifications. View community issues on an interactive map.
+  </Card>
+
+  <Card title="Municipal Employees" href="#" icon="hard-hat">
+    Receive automated work assignments based on location and expertise. Access detailed issue information including photos and GPS coordinates. Update status from mobile devices in the field. Optimize routes with multiple assignments.
+  </Card>
+
+  <Card title="City Administrators" href="#" icon="chart-network">
+    Monitor real-time dashboards with KPIs and metrics. Analyze trends to allocate resources effectively. Generate reports for city council and public transparency. Identify problem hotspots and recurring issues.
+  </Card>
+
+  <Card title="Department Heads" href="#" icon="users-gear">
+    Track team performance and workload distribution. Set priority levels and escalation rules. Manage budgets with cost tracking per issue type. Coordinate cross-department responses for complex issues.
+  </Card>
+
+  <Card title="Emergency Services" href="#" icon="siren-on">
+    Receive critical alerts for hazardous situations. Coordinate with utility crews during emergencies. Access historical data for affected areas. Integrate with 911 and emergency dispatch systems.
+  </Card>
+
+  <Card title="Contractors & Vendors" href="#" icon="truck-ramp-box">
+    Receive work orders with complete specifications. Submit bids for contracted repairs. Upload completion documentation and photos. Track payment status and invoice history.
+  </Card>
+
+</Columns>
+
+<br />
+
+## Real-World Use Cases
+
+<Expandable title="Water Main Break Emergency Response">
+  **Scenario**: A water main breaks at 2 AM, flooding a residential street.
+
+  **Without Civiq**: Multiple residents call 311. Each report creates a separate ticket. Dispatchers manually coordinate with the water department. No visibility into which crew is available. Residents don't know when help will arrive. Average response time: 4-6 hours.
+
+  **With Civiq**:
+
+  1. First resident reports via mobile app with GPS location and photo
+  2. Civiq automatically detects duplicate reports within 500m radius
+  3. System classifies as "high severity" water emergency
+  4. Nearest available crew receives push notification instantly
+  5. Crew accepts assignment and updates ETA
+  6. All affected residents receive automatic notifications
+  7. Supervisor monitors resolution in real-time dashboard
+
+  ```javascript
+  // Emergency water issue gets priority routing
+  const emergency = await client.issues.create({
+    type: 'water_main_break',
+    severity: 'critical',
+    location: { lat: 40.7128, lng: -74.0060 },
+    reportedAt: '2026-02-15T02:15:00Z',
+    attachments: ['photo_url'],
+    notifyEmergency: true
+  });
+
+  // System auto-assigns to nearest crew
+  // Response time: 35 minutes
+  ```
+
+  **Result**: Response time reduced to 35 minutes. All nearby residents informed. Issue resolved in 2 hours instead of 6-8 hours.
+</Expandable>
+
+<Expandable title="Street Light Outage Management">
+  **Scenario**: Multiple street lights are out in a neighborhood, creating safety concerns.
+
+  **Problem Context**: Dark streets increase crime risk, traffic accidents, and reduce quality of life. Residents feel unsafe walking at night. Traditional reporting requires multiple phone calls with vague descriptions like "the light near the park."
+
+  **Civiq Solution**:
+
+  Citizens report specific lights using the map interface. Each street light has a unique ID in the system. Electrical department receives batch assignments for efficient routing. Citizens can see all reported outages in their area.
+
+  ```javascript
+  // Batch report multiple street lights
+  const outageReport = await client.issues.createBatch([
+    {
+      type: 'streetlight_outage',
+      assetId: 'LIGHT_4521',
+      location: { lat: 40.7580, lng: -73.9855 },
+      reportedBy: 'citizen_789'
+    },
+    {
+      type: 'streetlight_outage',
+      assetId: 'LIGHT_4522',
+      location: { lat: 40.7581, lng: -73.9856 },
+      reportedBy: 'citizen_789'
+    }
+  ]);
+
+  // System creates optimized route for repair crew
+  const route = await client.routes.optimize({
+    issues: outageReport.ids,
+    crewId: 'crew_electric_01'
+  });
+  ```
+
+  **Impact**: Electrical crews fix 12 lights in one trip instead of making separate visits. Repair time reduced from 2 weeks to 2 days. Neighborhood safety restored quickly.
+</Expandable>
+
+<Expandable title="Pothole Repair Coordination">
+  **Scenario**: Heavy winter causes hundreds of potholes across the city.
+
+  **Challenge**: Road maintenance teams are overwhelmed. No clear prioritization system. Residents complain on social media. City council receives pressure to act. Limited budget requires strategic repair scheduling.
+
+  **Civiq's Approach**:
+
+  <Tabs>
+    <Tab title="Citizen Reporting">
+      ```javascript
+      // Citizens report potholes with severity
+      const pothole = await client.issues.create({
+        type: 'pothole',
+        severity: 'medium',
+        location: { address: '5th Avenue & 42nd Street' },
+        size: 'large', // small, medium, large
+        depth: 'deep', // shallow, moderate, deep
+        vehicleDamage: false,
+        photos: ['photo1.jpg', 'photo2.jpg']
+      });
+      ```
+    </Tab>
+
+    <Tab title="Admin Prioritization">
+      ```javascript
+      // Administrators prioritize based on multiple factors
+      const priorityList = await client.issues.prioritize({
+        type: 'pothole',
+        criteria: {
+          trafficVolume: 'high', // High traffic roads first
+          damageReports: true, // Vehicle damage reported
+          publicTransit: true, // Near bus routes
+          schoolZones: true // School safety zones
+        }
+      });
+
+      // Generate repair schedule
+      const schedule = await client.schedules.create({
+        issues: priorityList.ids,
+        budget: 150000,
+        crews: ['crew_road_01', 'crew_road_02'],
+        startDate: '2026-02-20'
+      });
+      ```
+    </Tab>
+
+    <Tab title="Public Transparency">
+      ```javascript
+      // Publish public repair schedule
+      await client.public.publishSchedule({
+        scheduleId: schedule.id,
+        includeMap: true,
+        includeTimeline: true,
+        allowComments: true
+      });
+
+      // Citizens can view when their street will be repaired
+      ```
+    </Tab>
+  </Tabs>
+
+  **Outcome**: City repairs 450 potholes in 3 weeks. High-traffic areas completed first. Public dashboard shows progress, reducing complaints by 70%. Budget tracked in real-time to prevent overruns.
+</Expandable>
+
+<Expandable title="Power Outage Communication">
+  **Scenario**: Severe storm causes widespread power outages affecting 5,000 households.
+
+  **Critical Factors**:
+
+  * Elderly residents need information about warming centers
+  * Hospitals and critical facilities need priority restoration
+  * Residents flood 311 with calls asking for ETAs
+  * Electric crews are overwhelmed and can't answer calls
+  * Social media spreads misinformation about restoration times
+
+  **Civiq Emergency Response System**:
+
+  ```javascript
+  // Create mass outage event
+  const outageEvent = await client.events.create({
+    type: 'power_outage',
+    severity: 'critical',
+    affectedArea: {
+      polygon: [[40.7128, -74.0060], ...], // Boundary coordinates
+      estimatedHouseholds: 5000
+    },
+    cause: 'storm_damage',
+    estimatedRestoration: '2026-02-16T18:00:00Z'
+  });
+
+  // Auto-notify all affected residents
+  await client.notifications.sendMass({
+    eventId: outageEvent.id,
+    channels: ['sms', 'email', 'push'],
+    message: 'Power outage confirmed. Crews dispatched. Estimated restoration: 6 PM. Updates every 2 hours.',
+    includeWarmingCenters: true,
+    includeEmergencyContacts: true
+  });
+
+  // Prioritize critical facilities
+  await client.facilities.markPriority({
+    types: ['hospital', 'nursing_home', 'fire_station'],
+    affectedByEvent: outageEvent.id
+  });
+
+  // Send periodic updates
+  await client.notifications.scheduleUpdates({
+    eventId: outageEvent.id,
+    interval: '2_hours',
+    untilResolved: true
+  });
+  ```
+
+  **Results**:
+
+  * 4,800 residents receive instant SMS notifications
+  * 311 call volume drops by 65%
+  * Critical facilities restored in 4 hours
+  * Residential power restored in 14 hours
+  * Warming center locations shared with elderly residents
+  * Real-time map shows restoration progress by neighborhood
+</Expandable>
+
+<Expandable title="Cross-Department Coordination">
+  **Scenario**: A sinkhole opens on Main Street, requiring water, streets, and utility departments to coordinate.
+
+  **Complexity Factors**:
+
+  * Water main needs emergency shutoff
+  * Street closure requires traffic rerouting
+  * Underground utility lines must be inspected
+  * Multiple contractors needed for specialized work
+  * Public needs constant updates about street closure
+  * Local businesses affected by reduced foot traffic
+
+  **Civiq Coordination Workflow**:
+
+  ```javascript
+  // Create complex multi-department issue
+  const sinkhole = await client.issues.create({
+    type: 'infrastructure_failure',
+    subtype: 'sinkhole',
+    severity: 'critical',
+    requiresDepartments: [
+      'water',
+      'streets',
+      'utilities',
+      'traffic_management'
+    ],
+    estimatedDuration: '7_days',
+    publicSafety: true
+  });
+
+  // Automatically create sub-tasks for each department
+  const tasks = await client.tasks.createFromTemplate({
+    issueId: sinkhole.id,
+    template: 'sinkhole_response',
+    tasks: [
+      {
+        department: 'water',
+        action: 'shutoff_main',
+        priority: 1,
+        estimatedHours: 2
+      },
+      {
+        department: 'streets',
+        action: 'install_barricades',
+        priority: 1,
+        estimatedHours: 1
+      },
+      {
+        department: 'utilities',
+        action: 'inspect_underground',
+        priority: 2,
+        estimatedHours: 4
+      },
+      {
+        department: 'traffic_management',
+        action: 'setup_detour',
+        priority: 1,
+        estimatedHours: 1
+      }
+    ]
+  });
+
+  // Track dependencies between tasks
+  await client.tasks.setDependencies({
+    taskId: tasks[2].id, // Utility inspection
+    dependsOn: [tasks[0].id], // Wait for water shutoff
+    notifyOnComplete: true
+  });
+
+  // Publish public status page
+  await client.public.createStatusPage({
+    issueId: sinkhole.id,
+    updates: 'real_time',
+    includePhotos: true,
+    includeTimeline: true,
+    businessImpact: {
+      affectedBusinesses: 15,
+      parkingAlternatives: true,
+      pedestrianAccess: 'maintained'
+    }
+  });
+  ```
+
+  **Outcome**: All four departments work in coordinated sequence. No delays waiting for prior tasks to complete. Public status page viewed 2,300 times. Businesses informed of timeline and alternatives. Repair completed in 5 days instead of estimated 10 days due to efficient coordination.
+</Expandable>
+
+<br />
+
+## Key Factors for Successful Implementation
+
+<Columns cols={2}>
+  <Card title="Technical Requirements">
+    **Infrastructure**: Cloud-hosted platform with 99.9% uptime SLA. Mobile apps for iOS and Android. Web dashboard for administrators. API for third-party integrations.
+ 
+     **Data Security**: SOC 2 Type II certified. GDPR and CCPA compliant. End-to-end encryption for sensitive data. Role-based access control. Regular security audits.
+ 
+     **Scalability**: Handles cities from 10,000 to 5+ million residents. Processes 10,000+ concurrent issue reports. Real-time updates with WebSocket connections. Auto-scaling infrastructure for emergencies.
+  </Card>
+
+  <Card title="Organizational Readiness">
+    **Change Management**: Employee training programs (2-week onboarding). Citizen education campaigns. Phased rollout by department. Success metrics and KPI tracking.
+ 
+     **Budget Considerations**: Subscription pricing based on city size. ROI typically achieved in 8-12 months. Reduces manual coordination costs by 40%. Grants and funding assistance available.
+ 
+     **Community Engagement**: Public launch events and demonstrations. Social media awareness campaigns. Integration with existing 311 systems. Multilingual support for diverse populations.
+  </Card>
+
+</Columns>
+
+<br />
+
+<Callout kind="success">
+  Over 150 cities across North America have implemented Civiq, collectively resolving more than 2.5 million infrastructure issues and saving an estimated $87 million in operational costs annually.
+</Callout>
+
+<br />
 
 ## Getting Started
+
+
+
+
+
+<Columns cols={3}>
+  <Card title="Report Issues" href="#" icon="flag">
+    Submit and track water, electricity, and infrastructure problems
+  </Card>
+
+  <Card title="User Management" href="#" icon="users">
+    Manage citizens, employees, and administrators
+  </Card>
+
+  <Card title="Problem Resolution" href="#" icon="wrench">
+    Assign and resolve civic issues efficiently
+  </Card>
+
+  <Card title="Utilities Monitoring" href="#" icon="bolt">
+    Track water, electricity, and other utility services
+  </Card>
+
+  <Card title="Admin Dashboard" href="#" icon="bar-chart">
+    Monitor system activity and analytics
+  </Card>
+
+  <Card title="API Reference" href="#" icon="code">
+    Integrate Civiq with your systems
+  </Card>
+
+</Columns>
+
+<br />
 
 ## Installation
 
@@ -35,6 +438,8 @@ Install the Civiq SDK to integrate with your application. The SDK is available f
     ```
   </Tab>
 </Tabs>
+
+<br />
 
 ## Quick Start: Report an Issue
 
@@ -163,7 +568,22 @@ Here's how to report a civic issue using the Civiq API. This example creates a w
   </Tab>
 </Tabs>
 
+<br />
+
 ## Core Features
+
+<Columns cols={2}>
+  <Card title="Issue Management">
+    Track and resolve civic problems efficiently with automated workflows, priority assignment, and real-time status updates. Create and categorize issues, assign to employees or departments, track resolution progress, and generate analytics reports.
+  </Card>
+
+  <Card title="User Roles">
+    Civiq supports three user types with distinct permissions and capabilities for optimal municipal management. **Citizens** report issues and track status, **Employees** resolve assigned problems, and **Admins** manage users and system settings.
+  </Card>
+
+</Columns>
+
+<br />
 
 ## Managing Users
 
@@ -212,29 +632,37 @@ Create and manage users across  different roles to build your municipal team.
   </Tab>
 </Tabs>
 
+<br />
+
 ## Issue Types and Priorities
 
-<Columns cols="2">
-  <Card title="Water Issues" href="#" icon="duotone fa-droplet" horizontal="false">
+
+
+
+<Columns cols={3}>
+  <Card title="Water Issues" href="#" icon="droplet">
     Water main breaks, supply problems, contamination reports, and pressure issues
   </Card>
 
-  <Card title="Electricity Problems" href="#" icon="duotone fa-lightbulb" horizontal="false">
+  <Card title="Electricity Problems" href="#" icon="lightbulb">
     Power outages, streetlight failures, electrical hazards, and grid maintenance
   </Card>
 
-  <Card title="Road Maintenance" href="#" icon="duotone fa-road" horizontal="false">
+  <Card title="Road Maintenance" href="#" icon="road">
     Potholes, road damage, signage issues, and traffic light malfunctions
   </Card>
 
-  <Card title="Waste Management" href="#" icon="duotone fa-trash" horizontal="false">
+  <Card title="Waste Management" href="#" icon="trash">
     Collection delays, illegal dumping, recycling issues, and sanitation concerns
   </Card>
+
 </Columns>
+
+<br />
 
 ## Advanced Workflows
 
-<Expandable title="Automated Issue Assignment" default-open="false">
+<Expandable title="Automated Issue Assignment">
   Civiq automatically assigns issues to available employees based on their department, workload, and location proximity.
 
   ```javascript
@@ -255,7 +683,7 @@ Create and manage users across  different roles to build your municipal team.
   When a citizen reports a water issue, the system automatically categorizes the issue type, determines severity level, finds nearby available employees, assigns to the best match, and sends notification to assigned employee.
 </Expandable>
 
-<Expandable title="Real-time Notifications" default-open="false">
+<Expandable title="Real-time Notifications">
   Send instant notifications to users when issue status changes or new assignments are made.
 
   ```javascript
@@ -270,7 +698,7 @@ Create and manage users across  different roles to build your municipal team.
   Supported notification channels include email notifications, SMS text messages, push notifications (mobile app), in-app alerts, and webhook integrations.
 </Expandable>
 
-<Expandable title="Analytics and Reporting" default-open="false">
+<Expandable title="Analytics and Reporting">
   Generate detailed reports on issue resolution times, employee performance, and problem trends.
 
   ```javascript
@@ -289,7 +717,7 @@ Create and manage users across  different roles to build your municipal team.
   Key metrics tracked: average resolution time by issue type, issue volume trends, employee performance ratings, geographic hotspots, and citizen satisfaction scores.
 </Expandable>
 
-<Expandable title="Integration Options" default-open="false">
+<Expandable title="Integration Options">
   Connect Civiq with your existing systems using webhooks, REST API, or SDKs.
 
   **Webhook Example:**
@@ -306,11 +734,13 @@ Create and manage users across  different roles to build your municipal team.
   Integration capabilities include GIS mapping systems, ERP platforms, CRM software, mobile applications, 311 service systems, and payment gateways.
 </Expandable>
 
+<br />
+
 ## Authentication
 
 Authenticate your API requests using API keys. Keep your API key secure and never expose it in client-side code.
 
-<Callout kind="alert" collapsed="false">
+<Callout kind="alert">
   Your API key carries many privileges. Keep it secure and never commit it to version control or share it publicly.
 </Callout>
 
@@ -324,5 +754,29 @@ const client = new Civiq({
 });
 ```
 
+<br />
+
 ## Next Steps
 
+<Columns cols={3}>
+  <Card title="Explore the API">
+    Check out the complete API reference to discover all available endpoints and capabilities.
+ 
+     [View API Documentation →](#)
+  </Card>
+
+  <Card title="Join the Community">
+    Connect with other developers and municipal administrators using Civiq.
+ 
+     [Community Forum →](#)
+  </Card>
+
+  <Card title="Get Support">
+    Need help? Our support team is available 24/7 to assist with integration and troubleshooting.
+ 
+     [Contact Support →](#)
+  </Card>
+
+</Columns>
+
+<br />
