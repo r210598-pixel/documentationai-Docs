@@ -146,6 +146,10 @@
                 "icon": "columns"
               }
             ]
+          },
+          {
+            "group": "java",
+            "pages": []
           }
         ]
       },
@@ -224,7 +228,37 @@
             "icon": "history"
           }
         ]
+      },
+      {
+        "tab": "python",
+        "icon": "lucide-snail",
+        "groups": [
+          {
+            "group": "hello",
+            "pages": [
+              {
+                "title": "this",
+                "path": "this"
+              }
+            ]
+          },
+          {
+            "group": "bai",
+            "pages": []
+          }
+        ]
       }
     ]
+  },
+  "logo-dark": "https://blob-cdn.documentation.ai/org-5841073b-1314-4cc5-b42c-8bb574c4af65/doc-d75f3731-d9f4-45c6-a365-aecc769fe80b/1771224257529-mzoqt7r1nes-rukmini_vasanth.jpg?q=85&fm=auto&auto=compress%2Cformat",
+  "logo-light": "https://blob-cdn.documentation.ai/org-5841073b-1314-4cc5-b42c-8bb574c4af65/doc-d75f3731-d9f4-45c6-a365-aecc769fe80b/1771224273128-mteeriq40nh-download--1-.jpg?q=85&fm=auto&auto=compress%2Cformat",
+  "favicon": "https://blob-cdn.documentation.ai/org-5841073b-1314-4cc5-b42c-8bb574c4af65/doc-d75f3731-d9f4-45c6-a365-aecc769fe80b/1771224280848-1ukg43fz6px-download.jpg?q=85&fm=auto&auto=compress%2Cformat",
+  "navbar": {
+    "actions": {
+      "primary": {
+        "title": "Click Javeed",
+        "link": "https://civiq-admin.vercel.app/"
+      }
+    }
   }
 }
