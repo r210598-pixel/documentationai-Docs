@@ -9,10 +9,6 @@
             "group": "hello",
             "pages": [
               {
-                "title": "dup_checking",
-                "path": "dup-checking"
-              },
-              {
                 "title": "hai",
                 "path": "hai"
               }
